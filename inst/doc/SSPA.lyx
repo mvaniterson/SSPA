@@ -1,0 +1,1217 @@
+#LyX 1.6.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
+\begin_document
+\begin_header
+\textclass literate-article
+\begin_preamble
+%\VignetteIndexEntry{SSPA vignette}
+%\VignetteKeywords{pilotData, sampleSize}
+%\VignettePackage{SSPA}
+%\VignetteDepends{SSPA, multtest}
+\end_preamble
+\use_default_options false
+\language english
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Sample Size and Power Analysis for Microarray Studies
+\end_layout
+
+\begin_layout Author
+Maarten van Iterson and Ren
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+{
+\backslash
+'e}
+\end_layout
+
+\end_inset
+
+e de Menezes
+\begin_inset Newline newline
+\end_inset
+
+Center for Human and Clinical Genetics,
+\begin_inset Newline newline
+\end_inset
+
+ Leiden University Medical Center, The Netherlands
+\begin_inset Newline newline
+\end_inset
+
+Package 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{SSPA}
+\end_layout
+
+\end_inset
+
+, version 0.1.3
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset toc
+LatexCommand tableofcontents
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+This document shows the functionality of the R-package
+\emph on
+ 
+\emph default
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{SSPA}
+\end_layout
+
+\end_inset
+
+.
+
+\emph on
+ 
+\emph default
+The package performs the power and sample size analysis method as described
+ by 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Ferreira2006a,Ferreira2006b"
+
+\end_inset
+
+.
+ Our implementation allows for fast and realistic estimates of power and
+ sample size for microarray experiments, given pilot data.
+ By means of two simple commands (
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{pilotData(), sampleSize()}
+\end_layout
+
+\end_inset
+
+), a researcher can read their data in and compute the desired estimates.
+ Other functions are provided to facilitate interpretation of results.
+ 
+\end_layout
+
+\begin_layout Standard
+Given a set of test statistics from the pilot data, the knowledge of their
+ distribution under the null hypothesis and the sample size used to compute
+ them, the method estimates the power for a given false discovery rate.
+ The multiple testing problem is controlled through the adaptive version
+ of the Benjamini and Hochberg method 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Benjamini1995"
+
+\end_inset
+
+.
+ For more details about the implementation and method we refer to 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Iterson2008,Ferreira2006a,Ferreira2006b"
+
+\end_inset
+
+.
+ In 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Iterson2009"
+
+\end_inset
+
+ we describe two biological case studies using the package
+\emph on
+ 
+\emph default
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{SSPA}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+For comparison we implement the power and sample size estimation method
+ proposed by Ruppert 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Ruppert2007"
+
+\end_inset
+
+ which uses a different estimation approach.
+ Two additional packages need to be installed for using this method namely
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{quadprog}
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{splines}
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+<<options, echo=FALSE>>= 
+\end_layout
+
+\begin_layout Plain Layout
+
+options(continue=" ")
+\end_layout
+
+\begin_layout Plain Layout
+
+@
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Basic Example
+\end_layout
+
+\begin_layout Standard
+We demonstrate the functionality of this package by using the preprocessed
+ gene expression data from the leukemia ALL/AML study of 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "golub1999"
+
+\end_inset
+
+ from the 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{multtest}
+\end_layout
+
+\end_inset
+
+ package.
+ To load the leukemia dataset, use 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{data(golub)}
+\end_layout
+
+\end_inset
+
+, and to view a description of the experiments and data, type 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{?golub}
+\end_layout
+
+\end_inset
+
+.
+ The number of samples per group are shown by 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{table(golub.cl)}
+\end_layout
+
+\end_inset
+
+ where ALL is class 0 and AML class 1.
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+<<>>=
+\end_layout
+
+\begin_layout Plain Layout
+
+library(multtest)
+\end_layout
+
+\begin_layout Plain Layout
+
+data(golub)  
+\end_layout
+
+\begin_layout Plain Layout
+
+table(golub.cl)    
+\end_layout
+
+\begin_layout Plain Layout
+
+@
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The required input for the sample size and power analysis is a vector of
+ test-statistics and the sample sizes used to compute them.
+ The test-statistics are obtained by a differentially gene expression analysis
+ using one of the available packages like 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{limma, maanova, multtest}
+\end_layout
+
+\end_inset
+
+ (it is also possible to import the vector of test-statistics in 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{R}
+\end_layout
+
+\end_inset
+
+ if they are calculated using any other software than 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{R}
+\end_layout
+
+\end_inset
+
+).
+ Here we will use the function 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{mt.teststat}
+\end_layout
+
+\end_inset
+
+ from the 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{multtest}
+\end_layout
+
+\end_inset
+
+ package to obtain a vector of test-statistics from the leukemia data.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+<<>>=
+\end_layout
+
+\begin_layout Plain Layout
+
+tst <- mt.teststat(golub, golub.cl) 
+\end_layout
+
+\begin_layout Plain Layout
+
+@
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The first step in doing the sample size and power analysis is creating a
+ object of class-
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{PilotData}
+\end_layout
+
+\end_inset
+
+ which will contain all the necessary information needed for the following
+ power and sample size analysis; a vector of test-statistcs and the sample
+ sizes used to compute them.
+ A user-friendly interface for creating an object of 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{PilotData}
+\end_layout
+
+\end_inset
+
+ is available as 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{pilotData()}
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+<<>>=
+\end_layout
+
+\begin_layout Plain Layout
+
+library(SSPA)
+\end_layout
+
+\begin_layout Plain Layout
+
+pd <- pilotData(name="ALL/AML",testStatistics=tst,sampleSizeA=11,sampleSizeB=27)
+\end_layout
+
+\begin_layout Plain Layout
+
+@
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Several ways of viewing the content of the 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{PilotData}
+\end_layout
+
+\end_inset
+
+-object are possible either graphically or using a 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{show}
+\end_layout
+
+\end_inset
+
+-method by just typing the name of the created object of 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{PilotData}
+\end_layout
+
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+<<>>=
+\end_layout
+
+\begin_layout Plain Layout
+
+pd
+\end_layout
+
+\begin_layout Plain Layout
+
+@
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+A histogram of p-values is obtained by just calling 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{hist(pd)}
+\end_layout
+
+\end_inset
+
+ and an empirical cumulative distribution of p-values by 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{plot(pd)}
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+<<fig=TRUE>>=
+\end_layout
+
+\begin_layout Plain Layout
+
+layout(matrix(c(1,2),nrow=2))
+\end_layout
+
+\begin_layout Plain Layout
+
+hist(pd, cex.main=1)
+\end_layout
+
+\begin_layout Plain Layout
+
+plot(pd, cex.main=1)
+\end_layout
+
+\begin_layout Plain Layout
+
+@
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Histogram and ECDF plot of p-values.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Now we can create an object of class 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{SampleSize}
+\end_layout
+
+\end_inset
+
+ which will perform the estimation of the proportion of non-differentially
+ expressed genes and the density of effect sizes.
+ Several options are possible 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{?sampleSize}
+\end_layout
+
+\end_inset
+
+.
+ The default method for estimation of the proportion of non-differentially
+ expressed genes is the method proposed by 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Langaas2005"
+
+\end_inset
+
+ as implemented by 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{convest}
+\end_layout
+
+\end_inset
+
+ from the package 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{limma}
+\end_layout
+
+\end_inset
+
+.
+ Additionally the method by 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Storey2002"
+
+\end_inset
+
+ and 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Ferreira2006b"
+
+\end_inset
+
+ are available, also a user-defined proportion can be given.
+ Again a generic 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{show}
+\end_layout
+
+\end_inset
+
+-method is implemented.
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+<<>>=
+\end_layout
+
+\begin_layout Plain Layout
+
+ss <- sampleSize(pd)
+\end_layout
+
+\begin_layout Plain Layout
+
+ss
+\end_layout
+
+\begin_layout Plain Layout
+
+@
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The density of effect size can be shown by a call to 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{plotEffectSize()}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+<<fig=TRUE>>=
+\end_layout
+
+\begin_layout Plain Layout
+
+plotEffectSize(ss, type='l')
+\end_layout
+
+\begin_layout Plain Layout
+
+@
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Density of effect-sizes and estimated average power.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Estimating the average power for other sample sizes then that of the pilot-data
+ can be performed with the 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{Power()}
+\end_layout
+
+\end_inset
+
+-function.
+ The user can also give the desired false discovery rate level or possible
+ multilpe false discovery rate levels.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+<<fig=TRUE>>=
+\end_layout
+
+\begin_layout Plain Layout
+
+layout(matrix(c(1:2), nrow=2))
+\end_layout
+
+\begin_layout Plain Layout
+
+pwr <- Power(ss, plot = FALSE, samplesizes = c(5, 10, 15, 20), fdr=0.01)
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+plot(c(5, 10, 15, 20), pwr, ylim = c(0, 1), type = "b", ylab = "Power",
+ xlab = "Sample size per group") 
+\end_layout
+
+\begin_layout Plain Layout
+
+legend("bottomright", colnames(pwr), col=c(1:ncol(pwr)), pch=1, lty=1)
+\end_layout
+
+\begin_layout Plain Layout
+
+pwr <- Power(ss, plot = FALSE, samplesizes = c(5, 10, 15, 20), fdr=c(0.01,
+ 0.05)) 
+\end_layout
+
+\begin_layout Plain Layout
+
+matplot(c(5, 10, 15, 20), pwr, ylim = c(0, 1), type = "b", pch=1, ylab =
+ "Power", xlab = "Sample size per group")
+\end_layout
+
+\begin_layout Plain Layout
+
+legend("bottomright", colnames(pwr), col=c(1:ncol(pwr)), pch=1, lty=1)
+\end_layout
+
+\begin_layout Plain Layout
+
+@
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Density of effect-sizes and estimated average power.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Additional functionality
+\end_layout
+
+\begin_layout Subsection
+Ferreira's 
+\begin_inset Formula $\pi_{0}$
+\end_inset
+
+ estimate
+\end_layout
+
+\begin_layout Standard
+Ferreira 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+textit{et al.}
+\end_layout
+
+\end_inset
+
+ propose a semi-parametric method to estimate the proportion of non-differential
+ly expressed genes
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Ferreira2006a,Ferreira2006b"
+
+\end_inset
+
+.
+ Figure 4 output of the 
+\begin_inset Formula $\pi_{0}$
+\end_inset
+
+ estimation method of Ferreira is shown.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+<<fig=TRUE>>=
+\end_layout
+
+\begin_layout Plain Layout
+
+layout(matrix(c(1,2), nrow=1))
+\end_layout
+
+\begin_layout Plain Layout
+
+ss <- sampleSize(pd, method="Ferreira", pi0=seq(0.05, 0.5, 0.05), doplot=TRUE)
+\end_layout
+
+\begin_layout Plain Layout
+
+plotEffectSize(ss)
+\end_layout
+
+\begin_layout Plain Layout
+
+@
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+textit{Left panel:}
+\end_layout
+
+\end_inset
+
+ The global minimum shows the 
+\begin_inset Formula $\pi_{0}$
+\end_inset
+
+ estimate.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+textit{Right panel:}
+\end_layout
+
+\end_inset
+
+ The estimation of the density of effect sizes using 
+\begin_inset Formula $\pi_{0}$
+\end_inset
+
+ estimate obtained with Ferreira's method.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Rupperts estimation method
+\end_layout
+
+\begin_layout Standard
+For using the method proposed by Ruppert 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Ruppert2007"
+
+\end_inset
+
+ two additional packages need to be installed for using this method namely
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{quadprog}
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{splines}
+\end_layout
+
+\end_inset
+
+.
+ Using 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+texttt{sampleSize(pd, method="Ruppert", nKnots = 11, bDegree = 3)}
+\end_layout
+
+\end_inset
+
+ both 
+
+\begin_inset Formula $\pi_{0}$
+\end_inset
+
+ and the density of effect sizes is estimated by Ruppert's method.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "SSPA"
+options "plain"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

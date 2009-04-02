@@ -1,0 +1,227 @@
+%% LyX 1.6.1 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Textclass specific LaTeX commands.
+\usepackage{Sweave}
+\newcommand{\Rcode}[1]{{\texttt{#1}}}
+\newcommand{\Robject}[1]{{\texttt{#1}}}
+\newcommand{\Rcommand}[1]{{\texttt{#1}}}
+\newcommand{\Rfunction}[1]{{\texttt{#1}}}
+\newcommand{\Rfunarg}[1]{{\textit{#1}}}
+\newcommand{\Rpackage}[1]{{\textit{#1}}}
+\newcommand{\Rmethod}[1]{{\textit{#1}}}
+\newcommand{\Rclass}[1]{{\textit{#1}}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+%\VignetteIndexEntry{SSPA vignette}
+%\VignetteKeywords{pilotData, sampleSize}
+%\VignettePackage{SSPA}
+%\VignetteDepends{SSPA, multtest}
+
+\usepackage{babel}
+
+\begin{document}
+
+\title{Sample Size and Power Analysis for Microarray Studies}
+
+
+\author{Maarten van Iterson and Ren{\'e}e de Menezes\\
+Center for Human and Clinical Genetics,\\
+ Leiden University Medical Center, The Netherlands\\
+Package \texttt{SSPA}, version 0.1.3\\
+}
+
+\maketitle
+\tableofcontents{}
+
+
+\section{Introduction}
+
+This document shows the functionality of the R-package\emph{ }\texttt{SSPA}.\emph{
+}The package performs the power and sample size analysis method as
+described by \cite{Ferreira2006a,Ferreira2006b}. Our implementation
+allows for fast and realistic estimates of power and sample size for
+microarray experiments, given pilot data. By means of two simple commands
+(\texttt{pilotData(), sampleSize()}), a researcher can read their
+data in and compute the desired estimates. Other functions are provided
+to facilitate interpretation of results. 
+
+Given a set of test statistics from the pilot data, the knowledge
+of their distribution under the null hypothesis and the sample size
+used to compute them, the method estimates the power for a given false
+discovery rate. The multiple testing problem is controlled through
+the adaptive version of the Benjamini and Hochberg method \cite{Benjamini1995}.
+For more details about the implementation and method we refer to \cite{Iterson2008,Ferreira2006a,Ferreira2006b}.
+In \cite{Iterson2009} we describe two biological case studies using
+the package\emph{ }\texttt{SSPA}.
+
+For comparison we implement the power and sample size estimation method
+proposed by Ruppert \cite{Ruppert2007} which uses a different estimation
+approach. Two additional packages need to be installed for using this
+method namely \texttt{quadprog} and \texttt{splines}. 
+
+<<options, echo=FALSE>>= 
+options(continue=" ")
+@
+
+
+\section{Basic Example}
+
+We demonstrate the functionality of this package by using the preprocessed
+gene expression data from the leukemia ALL/AML study of \cite{golub1999}
+from the \texttt{multtest} package. To load the leukemia dataset,
+use \texttt{data(golub)}, and to view a description of the experiments
+and data, type \texttt{?golub}. The number of samples per group are
+shown by \texttt{table(golub.cl)} where ALL is class 0 and AML class
+1.
+
+<<>>=
+library(multtest)
+data(golub)  
+table(golub.cl)    
+@
+
+The required input for the sample size and power analysis is a vector
+of test-statistics and the sample sizes used to compute them. The
+test-statistics are obtained by a differentially gene expression analysis
+using one of the available packages like \texttt{limma, maanova, multtest}
+(it is also possible to import the vector of test-statistics in \texttt{R}
+if they are calculated using any other software than \texttt{R}).
+Here we will use the function \texttt{mt.teststat} from the \texttt{multtest}
+package to obtain a vector of test-statistics from the leukemia data. 
+
+<<>>=
+tst <- mt.teststat(golub, golub.cl) 
+@
+
+The first step in doing the sample size and power analysis is creating
+a object of class-\texttt{PilotData} which will contain all the necessary
+information needed for the following power and sample size analysis;
+a vector of test-statistcs and the sample sizes used to compute them.
+A user-friendly interface for creating an object of \texttt{PilotData}
+is available as \texttt{pilotData()}. 
+
+<<>>=
+library(SSPA)
+pd <- pilotData(name="ALL/AML",testStatistics=tst,sampleSizeA=11,sampleSizeB=27)
+@
+
+Several ways of viewing the content of the \texttt{PilotData}-object
+are possible either graphically or using a \texttt{show}-method by
+just typing the name of the created object of \texttt{PilotData}:
+
+<<>>=
+pd
+@
+
+A histogram of p-values is obtained by just calling \texttt{hist(pd)}
+and an empirical cumulative distribution of p-values by \texttt{plot(pd)}. 
+
+%
+\begin{figure}
+<<fig=TRUE>>=
+layout(matrix(c(1,2),nrow=2))
+hist(pd, cex.main=1)
+plot(pd, cex.main=1)
+@
+
+\caption{Histogram and ECDF plot of p-values.}
+
+\end{figure}
+
+
+Now we can create an object of class \texttt{SampleSize} which will
+perform the estimation of the proportion of non-differentially expressed
+genes and the density of effect sizes. Several options are possible
+\texttt{?sampleSize}. The default method for estimation of the proportion
+of non-differentially expressed genes is the method proposed by \cite{Langaas2005}
+as implemented by \texttt{convest} from the package \texttt{limma}.
+Additionally the method by \cite{Storey2002} and \cite{Ferreira2006b}
+are available, also a user-defined proportion can be given. Again
+a generic \texttt{show}-method is implemented.
+
+<<>>=
+ss <- sampleSize(pd)
+ss
+@
+
+The density of effect size can be shown by a call to \texttt{plotEffectSize()}
+
+%
+\begin{figure}
+<<fig=TRUE>>=
+plotEffectSize(ss, type='l')
+@
+
+\caption{Density of effect-sizes and estimated average power.}
+
+\end{figure}
+
+
+Estimating the average power for other sample sizes then that of the
+pilot-data can be performed with the \texttt{Power()}-function. The
+user can also give the desired false discovery rate level or possible
+multilpe false discovery rate levels.
+
+%
+\begin{figure}
+<<fig=TRUE>>=
+layout(matrix(c(1:2), nrow=2))
+pwr <- Power(ss, plot = FALSE, samplesizes = c(5, 10, 15, 20), fdr=0.01) 
+plot(c(5, 10, 15, 20), pwr, ylim = c(0, 1), type = "b", ylab = "Power", xlab = "Sample size per group") 
+legend("bottomright", colnames(pwr), col=c(1:ncol(pwr)), pch=1, lty=1)
+pwr <- Power(ss, plot = FALSE, samplesizes = c(5, 10, 15, 20), fdr=c(0.01, 0.05)) 
+matplot(c(5, 10, 15, 20), pwr, ylim = c(0, 1), type = "b", pch=1, ylab = "Power", xlab = "Sample size per group")
+legend("bottomright", colnames(pwr), col=c(1:ncol(pwr)), pch=1, lty=1)
+@
+
+
+\caption{Density of effect-sizes and estimated average power.}
+
+\end{figure}
+
+
+
+\section{Additional functionality}
+
+
+\subsection{Ferreira's $\pi_{0}$ estimate}
+
+Ferreira \textit{et al.} propose a semi-parametric method to estimate
+the proportion of non-differentially expressed genes\cite{Ferreira2006a,Ferreira2006b}.
+Figure 4 output of the $\pi_{0}$ estimation method of Ferreira is
+shown.
+
+%
+\begin{figure}
+<<fig=TRUE>>=
+layout(matrix(c(1,2), nrow=1))
+ss <- sampleSize(pd, method="Ferreira", pi0=seq(0.05, 0.5, 0.05), doplot=TRUE)
+plotEffectSize(ss)
+@
+
+\caption{\textit{Left panel:} The global minimum shows the $\pi_{0}$ estimate.
+\textit{Right panel:} The estimation of the density of effect sizes
+using $\pi_{0}$ estimate obtained with Ferreira's method.}
+
+
+
+\end{figure}
+
+
+
+\subsection{Rupperts estimation method}
+
+For using the method proposed by Ruppert \cite{Ruppert2007} two additional
+packages need to be installed for using this method namely \texttt{quadprog}
+and \texttt{splines}. Using \texttt{sampleSize(pd, method="Ruppert", nKnots = 11, bDegree = 3)}
+both \inputencoding{latin1}{$\pi_{0}$ and the density of effect sizes
+is estimated by Ruppert's method.}
+
+\inputencoding{latin9}\bibliographystyle{plain}
+\bibliography{SSPA}
+
+\end{document}

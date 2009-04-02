@@ -1,0 +1,9 @@
+citHeader("To cite package 'SSPA' in publications use:")
+
+citEntry(entry="manual",
+         title = "SSPA: Power and Sample Size Analysis package",
+         author = personList(as.person("Maarten van Iterson"), as.person("Renee Menezes")),
+         textVersion = paste("van Iterson, M. 't Hoen, P.A.C. Pedotti, P. Hooiveld, G.J.E.J. den Dunnen, J.T. van Ommen, G.J.B. Boer, J.M.     Menezes, R.X., Relative power and sample size analysis on gene expression profiling data, BMC  Genomic, 2009, submitted for publication",  
+                             "van Iterson, M. Ferreira, J. Menezes, R.X., SSPA: Power and Sample Size Analysis package, Bioinformatics, 2009, submitted for publication", sep=""))   
+
+citFooter("This free open-source software implements academic research by the authors and co-workers. If you use it,please support the project by citing the appropriate journal articles.")

@@ -1,0 +1,44 @@
+importClassesFrom(methods,
+	                character,
+                  list,
+                  logical,
+                  missing,
+                  numeric)
+
+importMethodsFrom(methods,
+                  show)
+
+importFrom(graphics,
+           abline,
+           arrows,
+           hist,
+           legend,
+           matlines,
+           matplot,
+           plot,
+           points,
+           text)
+
+importFrom(limma, 
+           convest)
+
+importFrom(methods, 
+           "@<-",
+           new)
+
+importFrom(stats,
+           fft,
+           approx,
+           optimize,
+           dbinom,
+           dnorm,
+           pnorm,
+           qnorm,  
+           dt,
+           pt,
+           qt)  
+
+export(pilotData, sampleSize, Power, plotEffectSize)
+
+exportMethods(plot, hist, show)
+
