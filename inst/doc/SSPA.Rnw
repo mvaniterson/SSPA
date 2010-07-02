@@ -151,12 +151,12 @@ ss
 The density of effect size can be shown by a call to \texttt{plotEffectSize()}
 
 %
-\begin{figure}
+\begin{figure}[!h]
 <<fig=TRUE>>=
 plotEffectSize(ss, type='l')
 @
 
-\caption{Density of effect-sizes and estimated average power.}
+\caption{Density of effect-sizes.}
 
 \end{figure}
 
@@ -179,7 +179,7 @@ legend("bottomright", colnames(pwr), col=c(1:ncol(pwr)), pch=1, lty=1)
 @
 
 
-\caption{Density of effect-sizes and estimated average power.}
+\caption{Estimated average power for different sample sizes and FDR-levels.}
 
 \end{figure}
 
