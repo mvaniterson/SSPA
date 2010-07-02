@@ -32,16 +32,16 @@ function (object) {
 	cat("Distribution of effect sizes is estimated from ", object@theta[1], " to ", 
       object@theta[length  (object@theta)], " using ", length(object@theta), 
       " points.", "\n", sep="")
-	cat("Method for estimation of the proportion of non-differntially expressed: \"", object@method, "\n", sep = "")
+	cat("Method for estimation of the proportion of non-differentially expressed: \"", object@method, "\n", sep = "")
 	if(object@method!="Ruppert")	
 	{
 		Gm <- ifelse(length(object@pi0) == 2, object@pi0[[2]], 0.0)		
-  	cat("Fraction of non-differently expressed genes: ", signif(object@pi0[[1]], 4), 
+  	cat("Fraction of non-differentially expressed genes: ", signif(object@pi0[[1]], 4), 
       " (adjusted=", signif(Gm, 4), ").\n", sep = "")
   	cat("Kernel used in the deconvolution is \"", object@kernel, "\" with bandwidth ", 
   	    signif(object@bandwidth, 4), ".\n", sep = "")
 	}	else {
-  	cat("Fraction of non-differently expressed genes: \n", 
+  	cat("Fraction of non-differentially expressed genes: \n", 
         names(object@pi0)[1], " = ", signif(object@pi0[[1]], 4), ".\n", sep = "")
 		cat(names(object@pi0)[2], " = ", signif(object@pi0[[2]], 4), ".\n", sep = "")
 		cat(names(object@pi0)[3], " = ", signif(object@pi0[[3]], 4), ".\n", sep = "")
@@ -142,31 +142,49 @@ deconvolution <- function(obj, adjust)
 				  ny = as.integer(N), 
           PACKAGE = "stats")$y
 	
-	#density of effect-sizes	
-	fz <- c(delta*dnorm(x, 0, 1), numeric(N)) 
-
-	if(obj@nullDist=="normal")
-	{	
-		#characteristic function of Normal	
-		Fz <- fft(dnorm(tk, 0, 1))		
-	} else {
-		#characteristic function of Student t
-		Fz <- fft(dt(tk, df=obj@dof))
+	
+	#TODO: Maybe replace this with analytical characteristic functions
+	cnorm <- function(t, mean, sd) exp(complex(imaginary = mean*t, real = - 0.5*(sd*t)^2))
+	# based on QRMlib package:
+	ct <- function(t, df){
+    aux <- ifelse(t == 0, 0, log(besselK(abs(t)*sqrt(df), df/2, expon.scaled=FALSE) * ((abs(t)*sqrt(df))^(df/2))*(2^(1-df/2))) -lgamma(df/2))
+		return(exp(aux))
 	}
+
+
+
+	if(obj@nullDist == "normal")
+	{	
+		#density of effect-sizes	
+		fz <- c(delta*dnorm(x, 0, 1), numeric(N)) 
+		#characteristic function of Normal	
+		#Fz <- fft(dnorm(tk, 0, 1))
+		Fz <- cnorm(xk, 0, 1)			
+	} else {
+		fz <- c(delta*dt(x, df=obj@dof), numeric(N)) 
+		#characteristic function of Student t
+		#Fz <- fft(dt(tk, df=obj@dof))
+		Fz <- ct(xk, df=obj@dof)			
+	} 
 	
 	#check if density goes below zero adjust pi0	 
 	Gm <- obj@pi0[[1]]	
 	diff <- y - Gm*fz
 	if(any(diff < -1e-5) & adjust) #default -1e-5
 	{	
-		idx <- which.min(diff)
-		Gm <- y[idx]/fz[idx]
+		#idx <- which.min(diff)
+		#Gm <- y[idx]/fz[idx]
+		#obj@pi0[["Adjusted"]] <- Gm		
+		#Better Upper Bound Estimates for pi0 Efron et al. (2001) Empirical Bayes Analysis of a Microarray Experiment
+		a <- 0.5	
+	  indices <- which(x > -a & x < a)
+		Gm <- sum(y[indices])/sum(fz[indices]) #or 2*pnorm(a) - 1 or 2 *pt(a, df=obj@dof)- 1
 		obj@pi0[["Adjusted"]] <- Gm		
 	}
 	
 	y <- (y - Gm*fz)/(1-Gm)				
 	
-	#add reference to kernels
+	#TODO: add references to kernels
 	Kz <- switch(obj@kernel, fan = ifelse(abs(h*xk) > 1, 0, (1-(h*xk)^2)^3),
                            wand = ifelse(abs(h*xk) < 1/2 | abs(h*xk) > 1, 0, (2*(1-abs(h*xk))^3)) + 
                                   ifelse(abs(h*xk) > 1/2, 0, (1-6*(h*xk)^2+6*abs(h*xk)^3)),
@@ -206,17 +224,19 @@ Gnhat <- function(obj, sampleSize, threshold = 0, lower = 0, upper = 1.0, resolu
 	if(obj@nullDist=="normal")
 	{	
 		#normal case	
-		gnhat <- outer(qnorm(1-u/2, 0, 1), obj@theta*sqrt(sampleSize), 
-                   function(x, y) 1 - pnorm(x-y) + pnorm(-x-y))%*%(lambda*(obj@theta[2]-obj@theta[1]))				
+		gnhat <- outer(qnorm(1-u/2, 0, 1), obj@theta*sqrt(sampleSize), function(x, y) 1 - pnorm(x-y) + pnorm(-x-y))				
 	} else {
 		#student case
-		#Do something to Warning Message: In pt(-qt(1 - x/2, df = obj@dof), df = obj@dof, ncp = y) ... :
+		#TODO: suppress warning message in pt(-qt(1 - x/2, df = obj@dof), df = obj@dof, ncp = y) ... :
     #                                  full precision was not achieved in 'pnt'
-		gnhat <- outer(qt(1-u/2, df=obj@dof, ncp=0), obj@theta*sqrt(sampleSize), 
-                   function(x, y) 1 - pt(x, df=obj@dof, ncp=y) + pt(-x, df=obj@dof, ncp=-y))%*%(lambda*(obj@theta[2]-obj@theta[1]))
+		# and using the t-dist is slow	
+		# gnhat <- outer(qt(1-u/2, df=obj@dof, ncp=0), obj@theta*sqrt(sampleSize),
+    #                 function(x, y) 1 - pt(x, df=obj@dof, ncp=y) + pt(-x, df=obj@dof, ncp=-y))
+		gnhat <- outer(qt(1-u/2, df=obj@dof, ncp=0), obj@theta*sqrt(sampleSize), function(x, y) 2*(1 - pt(x, df=obj@dof, ncp=y)))
 	}
 
-	gnhat
+
+	gnhat%*%(lambda*(obj@theta[2]-obj@theta[1]))
 }
 
 ##Bernstein estimate of the distribution function of p-values
@@ -258,99 +278,6 @@ Dn <- function(x, adjust, pi0, xlim = c(0,1), resolution = 1000, doplot = FALSE)
 		points(x, y, pch = 19)	
 	}
 	y
-}
-
-##penalized B-splines optimization
-constrainedOptimization <- function(lambda, y, X, D)
-{
-	Dmat <- t(X) %*% X + lambda * t(D) %*% D
-	dvec <-  t(X) %*% y
-
-	#define constrains
-	Amat <- as.matrix(cbind(rep(1, ncol(X)), diag(rep(1, ncol(X)))))
-	bvec <- c(1, rep(0, ncol(X)))
-
-	solve.QP(Dmat, dvec, Amat, bvec, meq=1, factorized=FALSE)$solution
-}
-
-##generalized cross-validation
-GCV <- function(lambda, y, X, D)
-{
-	a <- constrainedOptimization(lambda, y, X, D)
-	Q <- solve(t(X) %*% X + lambda * t(D) %*% D) #matrix inversion
-	DF <- sum(diag(Q %*% (t(X) %*% X )))
-	s <- sum((y- X %*% a)^2)
-	s /(nrow(X) - DF)^2
-}
-
-##Penalized B-Spline regression method of Ruppert et al. 
-##Ruppert, D. and Nettleton, D. and Hwang, J.T.G.,
-##Exploring the information in p-values for the analysis and planning of multiple-test experiments.,
-##Biometrics, 2007, 63, 2, 483-95
-psreg <- function(obj,  resolution = 1000)
-{	
-	if(!require(quadprog)) warning("In order to use Ruppert's method, the package 'quadprog' must be installed!")
-	if(!require(splines)) warning("In order to use Ruppert's method, the package 'splines' must be installed!")
-	
-	M <- length(obj@pValues)  	
-	w <- 1/(resolution+1)
-	x <- seq(w, 1-w, by=w)
-	y <- .C("massdist", 
-	        x = as.double(obj@pValues), 
-	        xmass = as.double(rep(1/M, M)),
-	        nx = as.integer(M), 
-	        xlo = as.double(min(x)), 
-	        xhi = as.double(max(x)), 
-	        y = double(resolution),
-	  		  ny = as.integer(resolution), 
-	        PACKAGE = "stats")$y/w
-	
-	if(obj@nullDist=="normal")
-	{
-		#normal case two-sided
-		Zr <- outer(x+w/2, obj@theta*sqrt(obj@sampleSize), function(x, y) 1 - pnorm(qnorm(1-x/2) - y) + pnorm(-qnorm(1-x/2) - y))
-		Zl <- outer(x-w/2, obj@theta*sqrt(obj@sampleSize), function(x, y) 1 - pnorm(qnorm(1-x/2) - y) + pnorm(-qnorm(1-x/2) - y))
-	} else {	 
-		#student case 
-		Zr <- outer(x+w/2, obj@theta*sqrt(obj@sampleSize), 
-          function(x, y) 1 - pt(qt(1-x/2, df=obj@dof), df=obj@dof, ncp=y) + pt(-qt(1-x/2, df=obj@dof), df=obj@dof, ncp=y))
-		Zl <- outer(x-w/2, obj@theta*sqrt(obj@sampleSize), 
-          function(x, y) 1 - pt(qt(1-x/2, df=obj@dof), df=obj@dof, ncp=y) + pt(-qt(1-x/2, df=obj@dof), df=obj@dof, ncp=y))
-	}
-
-	Z <- (Zr - Zl)/w
-	
-  #create B-spline basis
-	knots <- seq(min(obj@theta)+1, max(obj@theta)-1, length=obj@nKnots+1)	
-	B <- splineDesign(knots, x=obj@theta, ord=obj@bDegree+1, outer.ok = TRUE)
-	
-	#normalize each B-spline
-	B <- B/(colSums(B)*(obj@theta[2] - obj@theta[1]))
-
-	X <- cbind(x, Z%*%B*(obj@theta[2] - obj@theta[1]), deparse.level=0)
-
-	#finite difference second derivative
-	pord <- 2
-	D <- diag(ncol(X))
-	D[1,1] <- 0
-	for(k in 1:pord) D <- diff(D)	
-
-	#generalized cross-validation
-	lambda <- optimize(f=GCV, interval=c(0, 1e10), y, X, D)$minimum
-
-	#optimale solution
-	a <- constrainedOptimization(lambda, y, X, D)	
-
-	obj@pi0 <- list("semiCompromise" = as.double(X[nrow(X),1:2]%*%a[1:2]),  #semi compromise
-	                "semiMin" = as.double(X[nrow(X),]%*%a),                 #semi min
-	                "semi" = a[1])		                                      #semi  
-
-	#this is not flexible yet
-	b <- a[-1]/(1-as.double(X[nrow(X),]%*%a)) #use semi min
-
-	obj@lambda <- as.vector(B %*% b)	
-
-	obj
 }
 
 ##truncate density of effect-sizes for given threshold
@@ -404,9 +331,9 @@ Power <- function(x, threshold = 0, fdr = 0.1, samplesizes = NULL, plot=FALSE, t
 	r.hat <- fdr*(1 - Gm)/(Gm*(1 - fdr))
 
 	if(is.null(samplesizes))
-		sampleSizes <- x@sampleSize
+		sampleSizes <- x@sampleSize 
 	else		
-		sampleSizes <- samplesizes
+		sampleSizes <- samplesizes/2 #effective sample size (1/na + 1/nb)^(-1) assumed na=nb thus na/2
 
 	G.n.hat <- matrix(numeric(), nrow = resolution, ncol = length(sampleSizes))		
 	for(i in seq(along = sampleSizes))
@@ -420,14 +347,15 @@ Power <- function(x, threshold = 0, fdr = 0.1, samplesizes = NULL, plot=FALSE, t
 	{
 		for(j in 1:length(fdr))
 		{
-			id <- max(which(G.n.hat[,i] > u/r.hat[j]))	
-			if(id == 1)
+			id <- which(G.n.hat[,i] > u/r.hat[j])	
+			if(length(id) <= 1)
 			{
 				uStar[i,j] <-	0.0001
 				power[i,j] <- 0
 			}
 			else
 			{
+				id <- max(id)
   			uStar[i,j] <-	0.5*(u[id] + u[id-1])
 				power[i,j] <- 0.5*(G.n.hat[id,i] + G.n.hat[id-1,i])			
 			}
@@ -456,11 +384,11 @@ Power <- function(x, threshold = 0, fdr = 0.1, samplesizes = NULL, plot=FALSE, t
 
 		arrows(x0, y0, x1, y1, code = 1, length = 0.05, col=1, lty=rep(lty.fdr, each=ncol(G.n.hat))) #not really flexible
 		text(x1 + xlim[2]/12.5, y1, signif(power, 3), col=1)		
-		legend("bottomright", c(paste("fdr", fdr), paste("sample size", round(sampleSizes, 2))), bty='n', lty=lty.legend, pch=pch.legend)
+		legend("bottomright", c(paste("fdr", fdr), paste("sample size", round(2*sampleSizes, 2))), bty='n', lty=lty.legend, pch=pch.legend)
 
 	}	
 	colnames(power) <- paste("fdr =", fdr)
-	rownames(power) <- paste("sample size =", round(sampleSizes, 2))
+	rownames(power) <- paste("sample size =", round(2*sampleSizes, 2))
 
 	power
 }

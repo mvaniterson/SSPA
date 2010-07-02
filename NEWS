@@ -1,0 +1,25 @@
+
+	**************************************************
+	*						 *
+	*	       SSPA NEWS			 *
+	*						 *
+	**************************************************
+
+
+		CHANGES IN SSPA VERSION 1.3.0
+
+
+NEW FEATURES
+
+    o	
+
+   
+
+BUG FIXES
+
+		o In function Power(): corrected the effective sample size if userdefined
+    o	Figure captions in vignette modified
+		o Replaced FFT derived characteristic function by analytical expression for the characteristic functions
+	
+
+   

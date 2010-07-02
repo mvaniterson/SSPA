@@ -21,7 +21,7 @@ pilotData <- function(name = "Unknown Experiment",
                       testStatistics = double(1),
                       sampleSizeA = double(1),
                       sampleSizeB = double(1),
-											dof = double(0),			
+											dof = double(1),													
 											nullDist = c("normal", "student"))
 {
 	
@@ -40,25 +40,25 @@ pilotData <- function(name = "Unknown Experiment",
 		return(stop("Missing sample sizes!"))
 	} else if(missing(sampleSizeA)) {	    
 		warning("Assumed equal sample size!")
-		obj@sampleSize <- 1/(1/sampleSizeB + 1/sampleSizeB)
+		obj@sampleSize <- 1/(1/sampleSizeB + 1/sampleSizeB) #sampleSizeB/2
 	} else if(missing(sampleSizeB)) {	    
 		warning("Assumed equal sample size!")
-		obj@sampleSize <- 1/(1/sampleSizeA + 1/sampleSizeA)
+		obj@sampleSize <- 1/(1/sampleSizeA + 1/sampleSizeA) #sampleSizeA/2
 	} else { 
 		obj@sampleSize <- 1/(1/sampleSizeA + 1/sampleSizeB)
 	}
 
 	obj@nullDist <- match.arg(nullDist)
 
-	if(obj@nullDist == "student" && dof > 0)
+	if(obj@nullDist == "student" & dof > 0)
 	{
 		obj@dof <- dof
-		warning("Only Ruppert Bspline method allows Student t distribution!")
+
 		#calculate two sided p-values Student
-		obj@pValues <- 2*(1 - pt(abs(testStatistics), df=dof, ncp=0))
+		obj@pValues <- 2*(1 - pt(abs(obj@testStatistics), df=obj@dof, ncp=0))
 	} else {	
 		#calculate two sided p-values normal
-		obj@pValues <- 2*(1 - pnorm(abs(testStatistics), 0, 1))
+		obj@pValues <- 2*(1 - pnorm(abs(obj@testStatistics), 0, 1))
 	}
 
 	obj
