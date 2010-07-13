@@ -5,7 +5,7 @@
 
 \description{The function \code{pilotData} initializes a \code{\linkS4class{PilotData}}-object. Information of the pilot data and the null distribution is stored e.g. name of pilot experiment, test statistics and number of samples used.}
 
-\usage{pilotData(name = "Unknown Experiment", testStatistics = double(1), sampleSizeA = double(1), sampleSizeB = double(1), dof = double(0),	 nullDist = c("normal", "student"))}
+\usage{pilotData(name = "Unknown Experiment", testStatistics = double(1), sampleSizeA = double(1), sampleSizeB = double(1), dof = double(1),	 nullDist = c("normal", "student"))}
 
 \arguments{
   \item{name}{character string giving the experiment name}
