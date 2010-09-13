@@ -1,8 +1,7 @@
-%% LyX 1.6.1 created this file.  For more info, see http://www.lyx.org/.
-%% Do not edit unless you really know what you are doing.
 \documentclass[english]{article}
 \usepackage[T1]{fontenc}
 \usepackage[latin9]{inputenc}
+\usepackage{nicefrac}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Textclass specific LaTeX commands.
 \usepackage{Sweave}
@@ -22,7 +21,7 @@
 %\VignetteDepends{SSPA, multtest}
 
 \usepackage{babel}
-
+\usepackage{nicefrac}
 \begin{document}
 
 \title{Sample Size and Power Analysis for Microarray Studies}
@@ -31,7 +30,7 @@
 \author{Maarten van Iterson and Ren{\'e}e de Menezes\\
 Center for Human and Clinical Genetics,\\
  Leiden University Medical Center, The Netherlands\\
-Package \texttt{SSPA}, version 0.1.3\\
+Package \texttt{SSPA}, version 1.5.4\\
 }
 
 \maketitle
@@ -40,43 +39,19 @@ Package \texttt{SSPA}, version 0.1.3\\
 
 \section{Introduction}
 
-This document shows the functionality of the R-package\emph{ }\texttt{SSPA}.\emph{
-}The package performs the power and sample size analysis method as
-described by \cite{Ferreira2006a,Ferreira2006b}. Our implementation
-allows for fast and realistic estimates of power and sample size for
-microarray experiments, given pilot data. By means of two simple commands
-(\texttt{pilotData(), sampleSize()}), a researcher can read their
-data in and compute the desired estimates. Other functions are provided
-to facilitate interpretation of results. 
+This document shows the functionality of the R-package \texttt{SSPA}. The package performs power and sample size analysis using a method described by \cite{Ferreira2006a,Ferreira2006b}. Our implementation allows for fast and realistic estimates of power and sample size for microarray experiments, given pilot data. By means of two simple commands (\texttt{pilotData(), sampleSize()}), a researcher can read their data in and compute the desired estimates. Other functions are provided to facilitate interpretation of results. 
 
-Given a set of test statistics from the pilot data, the knowledge
-of their distribution under the null hypothesis and the sample size
-used to compute them, the method estimates the power for a given false
-discovery rate. The multiple testing problem is controlled through
-the adaptive version of the Benjamini and Hochberg method \cite{Benjamini1995}.
-For more details about the implementation and method we refer to \cite{Iterson2008,Ferreira2006a,Ferreira2006b}.
-In \cite{Iterson2009} we describe two biological case studies using
-the package\emph{ }\texttt{SSPA}.
+Given a set of test statistics from the pilot data, the knowledge of their distribution under the null hypothesis and the sample size used to compute them, the method estimates the power for a given false discovery rate. The multiple testing problem is controlled through the adaptive version of the Benjamini and Hochberg method \cite{Benjamini1995}. For more details about the implementation and method we refer to \cite{Iterson2010,Ferreira2006a,Ferreira2006b}. In \cite{Iterson2009} we describe two biological case studies using the package\texttt{SSPA}.
 
-For comparison we implement the power and sample size estimation method
-proposed by Ruppert \cite{Ruppert2007} which uses a different estimation
-approach. Two additional packages need to be installed for using this
-method namely \texttt{quadprog} and \texttt{splines}. 
+For comparison we implement the power and sample size estimation method proposed by Ruppert \cite{Ruppert2007} which uses a different estimation approach. Two additional packages need to be installed for using this method namely \texttt{quadprog} and \texttt{splines}. 
 
 <<options, echo=FALSE>>= 
 options(continue=" ")
 @
 
-
 \section{Basic Example}
 
-We demonstrate the functionality of this package by using the preprocessed
-gene expression data from the leukemia ALL/AML study of \cite{golub1999}
-from the \texttt{multtest} package. To load the leukemia dataset,
-use \texttt{data(golub)}, and to view a description of the experiments
-and data, type \texttt{?golub}. The number of samples per group are
-shown by \texttt{table(golub.cl)} where ALL is class 0 and AML class
-1.
+We demonstrate the functionality of this package by using the preprocessed gene expression data from the leukemia ALL/AML study of \cite{Golub1999} from the \texttt{multtest} package. To load the leukemia dataset, use \texttt{data(golub)}, and to view a description of the experiment and data, type \texttt{?golub}. The number of samples per group are shown by \texttt{table(golub.cl)} where ALL is class 0 and AML class 1.
 
 <<>>=
 library(multtest)
@@ -84,45 +59,31 @@ data(golub)
 table(golub.cl)    
 @
 
-The required input for the sample size and power analysis is a vector
-of test-statistics and the sample sizes used to compute them. The
-test-statistics are obtained by a differentially gene expression analysis
-using one of the available packages like \texttt{limma, maanova, multtest}
-(it is also possible to import the vector of test-statistics in \texttt{R}
-if they are calculated using any other software than \texttt{R}).
-Here we will use the function \texttt{mt.teststat} from the \texttt{multtest}
-package to obtain a vector of test-statistics from the leukemia data. 
+The required input for the sample size and power analysis is a vector of test-statistics and the sample sizes used to compute them. The test-statistics are obtained by a differential gene expression analysis using one of the available packages like \texttt{limma, maanova, multtest} (it is also possible to import the vector of test-statistics in \texttt{R} if they are calculated using another software package). Here we will use the function \texttt{mt.teststat} from the \texttt{multtest} package to obtain a vector of test-statistics from the leukemia data. 
 
 <<>>=
 tst <- mt.teststat(golub, golub.cl) 
 @
 
-The first step in doing the sample size and power analysis is creating
-a object of class-\texttt{PilotData} which will contain all the necessary
-information needed for the following power and sample size analysis;
-a vector of test-statistcs and the sample sizes used to compute them.
-A user-friendly interface for creating an object of \texttt{PilotData}
-is available as \texttt{pilotData()}. 
+The first step in doing the sample size and power analysis is creating a object of class \texttt{PilotData} which will contain all the necessary information needed for the following power and sample size analysis; a vector of test-statistics and the sample sizes used to compute them. A user-friendly interface for creating an object of \texttt{PilotData} is available as \texttt{pilotData()}. 
 
 <<>>=
 library(SSPA)
 pd <- pilotData(name="ALL/AML",testStatistics=tst,sampleSizeA=11,sampleSizeB=27)
 @
 
-Several ways of viewing the content of the \texttt{PilotData}-object
-are possible either graphically or using a \texttt{show}-method by
-just typing the name of the created object of \texttt{PilotData}:
+Several ways of viewing the content of the \texttt{PilotData} object are possible either graphically or using a \texttt{show}-method by just typing the name of the created object of \texttt{PilotData}:
 
 <<>>=
 pd
 @
 
-A histogram of p-values is obtained by just calling \texttt{hist(pd)}
-and an empirical cumulative distribution of p-values by \texttt{plot(pd)}. 
+A histogram of p-values is obtained by just calling \texttt{hist(pd)} and an empirical cumulative distribution of p-values by \texttt{plot(pd)}. The accumulation of p-values near zero indicates that some genes are differentially expressed, as the deviation from the uniform distribution in the lower panel. 
 
 %
 \begin{figure}
 <<fig=TRUE>>=
+par(mar=c(4.1, 4.1, 2.1, 2.1))
 layout(matrix(c(1,2),nrow=2))
 hist(pd, cex.main=1)
 plot(pd, cex.main=1)
@@ -132,23 +93,14 @@ plot(pd, cex.main=1)
 
 \end{figure}
 
-
-Now we can create an object of class \texttt{SampleSize} which will
-perform the estimation of the proportion of non-differentially expressed
-genes and the density of effect sizes. Several options are possible
-\texttt{?sampleSize}. The default method for estimation of the proportion
-of non-differentially expressed genes is the method proposed by \cite{Langaas2005}
-as implemented by \texttt{convest} from the package \texttt{limma}.
-Additionally the method by \cite{Storey2002} and \cite{Ferreira2006b}
-are available, also a user-defined proportion can be given. Again
-a generic \texttt{show}-method is implemented.
+Now we can create an object of class \texttt{SampleSize} which will perform the estimation of the proportion of non-differentially expressed genes and the density of effect sizes. Several options are available see \texttt{?sampleSize}. The default method for estimation of the proportion of non-differentially expressed genes is the method proposed by \cite{Langaas2005} as implemented by \texttt{convest()} function from the package \texttt{limma}. Additionally the method by \cite{Storey2002} and \cite{Ferreira2006b} are available, also a user-defined proportion is allowed. Again a generic \texttt{show}-method is implemented.
 
 <<>>=
 ss <- sampleSize(pd)
 ss
 @
 
-The density of effect size can be shown by a call to \texttt{plotEffectSize()}
+The density of effect size can be shown by a call to \texttt{plotEffectSize()}. When there are both up- and down-regulated genes a bimodal density is observed.  
 
 %
 \begin{figure}[!h]
@@ -161,15 +113,13 @@ plotEffectSize(ss, type='l')
 \end{figure}
 
 
-Estimating the average power for other sample sizes then that of the
-pilot-data can be performed with the \texttt{Power()}-function. The
-user can also give the desired false discovery rate level or possible
-multilpe false discovery rate levels.
+Estimating the average power for other sample sizes then that of the pilot-data can be performed with the \texttt{Power()}-function. The user can also give the desired false discovery rate level or possible multiple false discovery rate levels as a vector.
 
 %
-\begin{figure}
+\begin{figure}[!h]
 <<fig=TRUE>>=
 layout(matrix(c(1:2), nrow=2))
+par(mar=c(4.1, 4.1, 2.1, 2.1))
 pwr <- Power(ss, plot = FALSE, samplesizes = c(5, 10, 15, 20), fdr=0.01) 
 plot(c(5, 10, 15, 20), pwr, ylim = c(0, 1), type = "b", ylab = "Power", xlab = "Sample size per group") 
 legend("bottomright", colnames(pwr), col=c(1:ncol(pwr)), pch=1, lty=1)
@@ -183,45 +133,185 @@ legend("bottomright", colnames(pwr), col=c(1:ncol(pwr)), pch=1, lty=1)
 
 \end{figure}
 
+\section{\Rpackage{SSPA} adapted for the \textit{moderated} $t$-statistics of \Rpackage{limma}}
 
+\subsection{Approximated $t$-distribution}
+
+Sofar the estimations obtained are based on assumption that the test-statistics follow a normal distribution. Here we descibe how we implemented an approximated $t$-distribution. Assume the $t$-statistics for each gene is calculated by:
+\begin{equation}
+T = \frac{\bar{X}-\bar{Y}}{\nicefrac{\hat{\sigma}}{\sqrt{N}}} = \frac{\bar{X}-\bar{Y} - \Delta}{\nicefrac{\hat{\sigma}}{\sqrt{N}}} + \frac{\Delta}{\nicefrac{\hat{\sigma}}{\sqrt{N}}},
+\end{equation}
+where $N= (\nicefrac{1}{n_X}+\nicefrac{1}{n_Y})^{-1}$, $\Delta$ is the difference between the means of the two groups and $\hat{\sigma}^2$ the pooled sample variance,
+\begin{equation}
+\hat{\sigma}^2 = \frac{n_X - 1}{n_X + n_Y - 2}S_{X}^2 + \frac{n_Y - 1}{n_X + n_Y - 2}S_{Y}^2. 
+\end{equation}
+If $\Delta = 0$, then $T$ has exactly a Student $t$-distribution with $\nu = n_X + n_Y - 2$ degrees of freedom. If $\Delta \neq 0$, then $T$ is the sum of Student random variable with $n_X + n_Y - 2$ degrees of freedom plus
+\begin{equation}
+\frac{\Delta}{\nicefrac{\hat{\sigma}}{\sqrt{N}}} = \frac{\Delta}{\sigma}\sqrt{N}\frac{\sigma}{\hat{\sigma}}
+\end{equation}
+In other words, $T$ is a Student random variable plus the square root of the effective sample size $N$ times an effect size given by
+\begin{equation}
+\theta = \frac{\Delta}{\sigma} \frac{\sigma}{\hat{\sigma}}
+\end{equation}
+
+This effect size is random, but since $\nicefrac{\sigma}{\hat{\sigma}}$ converges a.s. to 1 it seems allright to view $\theta$ as a slightly perturbed effect size. The random variable $T$ becomes $T + \sqrt{N}\theta$, when $\Delta \neq 0$.  We can still use the model of Ferreira and Zwinderman (2006) but where the standard normal is replaced by the Student $t$-distribution.
+
+\subsection{moderated $t$-statistics}
+
+The moderated $t$-statistics calculated by \Rpackage{limma} follows a $t$-distribution with moderated degrees of freedom $\tilde{\nu}$. So we only have to plug-in the moderated degrees of freedom and we can use the moderated $t$-statistics in our power and sample size calculations. Because we use moderated degrees of freedom we also have a moderated sample size for each group. 
+
+The moderated degrees of freedom $\tilde{\nu}$ constists of two parts: $\nu_0$ is the \textit{prior} degrees of freedom estimated by \Rpackage{limma} using a empirical Bayesian approach and the residual degrees of freedom; for a two-group comparison this is given by $\nu = n_X + n_Y - 2$. Now we can define a moderated sample size for each group:
+\begin{equation}
+\tilde{\nu} = n_X + \nicefrac{\nu_0}{2} + n_Y + \nicefrac{\nu_0}{2} - 2 = \tilde{n_X} + \tilde{n_Y} -2,
+\end{equation}
+where the $\nicefrac{\nu_0}{2}$ is added to the original sample sizes of each group.
+
+Like before, first we created an object of class \Rclass{pilotData} but now with \Rcode{testStatistics} the moderated $t$-statistics of the contrast of interest, \Rcode{sampleSizeA} the moderated sample size of group A plus half the \textit{prior} degrees of freedom (from a \Rpackage{limma} \Rfunction{eBayes}-fit object using \Rcode{fit\$df.prior}). Internally the degrees of freedom are defined as \Rcode{fit\$df.prior + fit\$df.residual}. By default the standard normal distribution is assumed so we need specifically the argument \Rcode{nullDist = "student"}.
+
+\subsection{Example using moderated $t$-statistics from \Rpackage{limma}}
+
+For illustration we will use the Swirl example from the \Rpackage{limma}-userguide but the Swirl data if obtained from the \Rpackage{marray}-package and using \Rpackage{convert} converted to a \Rpackage{limma} \Robject{RGList}. In the following bit of code the data is loaded, normalized and an empirical Bayesian linear model is fitted.
+
+<<>>=
+library(marray)
+library(convert)
+library(limma)
+data(swirl)
+swirl <- as(swirl, "RGList")
+MA <- normalizeWithinArrays(swirl) #print tip loess
+design <- c(-1,1,-1,1)
+fit <- lmFit(MA, design)
+ordinary.t <- fit$coef/fit$stdev.unscaled/fit$sigma
+fitModerated <- eBayes(fit)
+@
+
+As described by the \Rpackage{limma} userguide; we can inspect the difference between moderated and orginal $t$ test-statistics using qq-plots:
+
+\begin{figure}
+<<fig=TRUE>>=
+par(mfcol=c(1,2))
+qqt(fitModerated$t, df=fitModerated$df.prior + fitModerated$df.residual, pch=16, cex=0.5, main="Moderated t")
+abline(0,1)
+qqt(ordinary.t, df=fit$df.residual, pch=16, cex=0.5, main="Ordinary t")
+abline(0,1)
+@
+\caption{qq-plots: showing the difference between moderated and orginal $t$ test-statistics.}
+
+\end{figure}
+
+Now we load the \Rpackage{SSPA}-package and create two \Rclass{pilotData}-objects, one for the ordinary $t$ test-statistics and one for the moderated $t$ test-statistics with the appropriate degrees of freedom and sample sizes. 
+
+<<>>=
+library(SSPA)
+
+nu <- fit$df.residual[1] 
+nu0 <- fitModerated$df.prior
+
+pd <- pilotData(name = "Swirl", testStatistics = ordinary.t[,1], sampleSizeA = 2, sampleSizeB = 2, dof=nu, nullDist = "student")
+pd
+
+pdMod <- pilotData(name = "Swirl", testStatistics = fitModerated$t[,1], sampleSizeA = 2 + nu0/2, sampleSizeB = 2 + nu0/2, dof= nu + nu0, nullDist = "student")
+pdMod
+@
+
+The data comes from a dye-swap experiment with four microarrays, thus for each RNA source we have two biological and two technical replicates. Because this is an dye-swap experiment we can estimate the difference between the biological sources, leaving three degrees of freedom for estimation of the error.
+
+The \Rcode{pdMod}-object has a moderated sample sizes and moderated degrees of freedom, the moderated Student $t$-distribution will be used for the analysis. The effective sample size was defined by: $N = (\nicefrac{1}{n_X}+\nicefrac{1}{n_Y})^{-1}$, thus with both four samples gives two. The moderated sample size is \Sexpr{round(pdMod@sampleSize, 2)}. 
+
+The next figure show the difference between the ordinary $t$ test-statistics and moderated $t$ test-statistics (left-panel). The right-panel show the difference in p-values where one is calculated using the ordinary degrees of freedom and the other using the moderated degrees of freedom.
+
+\begin{figure}
+<<fig=TRUE>>=
+par(mfcol=c(1,2))
+plot(abs(pd@testStatistics), abs(pdMod@testStatistics), 
+xlab="|ordinary t test statistics|", 
+ylab="|moderated t test statistics|", pch=16, cex=0.5)
+abline(a=0, b=1, col="red", lwd=2, lty=2)
+plot(-log10(pd@pValues), -log10(pdMod@pValues), xaxt="n", yaxt='n', xlab=expression(paste(-log[10],"(ordinary p-values)")), 
+ylab=expression(paste(-log[10],"(moderated p-values)")), pch=16, cex=0.5)
+at <- axTicks(2)
+axis(2, at=at, tcl=-1,	labels=parse(text=c("10^0", paste("10^-", at[-1], sep=""))))			
+at <- axTicks(1)
+axis(1, at=at, tcl=-1,	labels=parse(text=c("10^0", paste("10^-", at[-1], sep=""))))			
+abline(a=0, b=1, col="red", lwd=2, lty=2)
+@
+
+\caption{scatterplots: showing the difference between moderated and orginal $t$ test-statistics.}
+
+\end{figure}
+
+<<>>=
+ss <- sampleSize(pd)
+ss
+ssMod <- sampleSize(pdMod)
+ssMod
+@
+
+Once the proportion of non-differentially expressed genes is estimated the density of effect sizes can be estimated. 
+
+
+\begin{figure}
+
+<<fig=TRUE>>=
+plotEffectSize(ssMod, type='l' , lwd=2, sub=NULL)
+lines(ss@theta, ss@lambda, col="red", lwd=2)
+pi0Mod <- paste("pi0: ", signif(ssMod@pi0[[2]], 3))
+pi0 <- paste("pi0: ", signif(ss@pi0[[2]], 3))
+labels <- c(paste("moderated ", pi0Mod), paste("ordinary ", pi0))
+legend("topleft", labels, col=c("black", "red"), pch=1)
+@
+
+\caption{Density of effect size for moderated and orginal $t$ test-statistics.}
+
+\end{figure}
+
+
+
+The dip below zero for the density of effect sizes based on the moderated test-statistics is unwanted. We implemented the suggestion by Efron \emph{et al.} \cite{Efron2001} for better upper bound estimates of $\pi_0$. The default value $0.5$ this value could be tuned to get a valid density.
+
+Again estimation of the average power for other sample sizes then that of the pilot-data can be performed:
+
+<<eval=FALSE>>=
+samplesizes <- c(2, 4, 6, 8, 10)
+pwr <- Power(ss, plot = FALSE, samplesizes = samplesizes, fdr=c(0.05, 0.1))
+pwrMod <- Power(ssMod, plot = FALSE, samplesizes = samplesizes + nu0/2, fdr=c(0.05, 0.1))
+matplot(samplesizes, pwr, ylim = c(0, 1), type = "b", col=1, pch=1, ylab = "Power", xlab = "Sample size per group", main="Power Curves")
+matlines(samplesizes, pwrMod, col=2, type="b", pch=1)
+legend("topleft", colnames(pwr), col=1, lty=c(1, 2))
+legend("bottomright", c("ordinary", "moderated"), col=1:2, lty=1)
+@
+
+\begin{figure}[!h]
+\includegraphics{figChunk17.pdf}
+\caption{Estimated average power for other sample sizes then that of the pilot-data for both moderated and orginal $t$ test-statistics and for different false discovery rate thresholds.}
+\end{figure}
+
+For small sample sizes the moderated test-statistics has higher power for larger sample sizes both statistics converge to eachother, as expected.
 
 \section{Additional functionality}
 
 
 \subsection{Ferreira's $\pi_{0}$ estimate}
 
-Ferreira \textit{et al.} propose a semi-parametric method to estimate
-the proportion of non-differentially expressed genes\cite{Ferreira2006a,Ferreira2006b}.
-Figure 4 output of the $\pi_{0}$ estimation method of Ferreira is
-shown.
+Ferreira \textit{et al.} propose a semi-parametric method to estimate the proportion of non-differentially expressed genes\cite{Ferreira2006a,Ferreira2006b}. Use \texttt{sampleSize(pd, method="Ferreira", pi0=seq(0.05, 0.5, 0.05), doplot=TRUE)}.
 
 %
-\begin{figure}
-<<fig=TRUE>>=
-layout(matrix(c(1,2), nrow=1))
-ss <- sampleSize(pd, method="Ferreira", pi0=seq(0.05, 0.5, 0.05), doplot=TRUE)
-plotEffectSize(ss)
-@
-
-\caption{\textit{Left panel:} The global minimum shows the $\pi_{0}$ estimate.
-\textit{Right panel:} The estimation of the density of effect sizes
-using $\pi_{0}$ estimate obtained with Ferreira's method.}
-
-
-
-\end{figure}
-
-
+%\begin{figure}
+%<<fig=TRUE>>=
+%layout(matrix(c(1,2), nrow=1))
+%ss <- sampleSize(pd, method="Ferreira", pi0=seq(0.05, 0.5, 0.05), doplot=TRUE)
+%plotEffectSize(ss)
+%@
+%\caption{\textit{Left panel:} The global minimum shows the $\pi_{0}$ estimate.
+%\textit{Right panel:} The estimation of the density of effect sizes
+%using $\pi_{0}$ estimate obtained with Ferreira's method.}
+%\end{figure}
 
 \subsection{Rupperts estimation method}
 
-For using the method proposed by Ruppert \cite{Ruppert2007} two additional
-packages need to be installed for using this method namely \texttt{quadprog}
-and \texttt{splines}. Using \texttt{sampleSize(pd, method="Ruppert", nKnots = 11, bDegree = 3)}
-both \inputencoding{latin1}{$\pi_{0}$ and the density of effect sizes
-is estimated by Ruppert's method.}
+For using the method proposed by Ruppert \cite{Ruppert2007} two additional packages need to be installed for using this method namely \texttt{quadprog} and \texttt{splines}. Using \texttt{sampleSize(pd, method="Ruppert", nKnots = 11, bDegree = 3)} both $\pi_{0}$ and the density of effect sizes is estimated by Ruppert's method.
 
-\inputencoding{latin9}\bibliographystyle{plain}
+\bibliographystyle{unsrt}
 \bibliography{SSPA}
 
 \end{document}

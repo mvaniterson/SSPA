@@ -51,7 +51,7 @@ function (object) {
 })
 
 ##User friendly interface to SampleSize
-sampleSize <- function(PilotData, method = c("Langaas", "Storey", "Ferreira", "Ruppert", "Userdefined"), from = -6, to = 6, resolution = 2^10, kernel = c("fan", "wand", "sinc"), pi0 = seq(0.1, 0.99, 0.01), adjust = TRUE, nKnots = 11, bDegree = 3, ...) 
+sampleSize <- function(PilotData, method = c("Langaas", "Storey", "Ferreira", "Ruppert", "Userdefined"), from = -6, to = 6, resolution = 2^10, kernel = c("fan", "wand", "sinc"), pi0 = seq(0.1, 0.99, 0.01), adjust = TRUE, a=0.5, nKnots = 11, bDegree = 3, ...) 
 {
 	#create new SampleSize-object with PilotData
 	obj <- new("SampleSize", PilotData)
@@ -99,7 +99,7 @@ sampleSize <- function(PilotData, method = c("Langaas", "Storey", "Ferreira", "R
                                                 Langaas = convest(obj@pValues, ...),
    																				      Ferreira = Dn(obj, adjust, pi0, ...),
 			  	                                      Userdefined = pi0)		
-		obj <- deconvolution(obj, adjust)	
+		obj <- deconvolution(obj, adjust, a)	
 	} else {			
 		obj@nKnots <- nKnots
 		obj@bDegree <- bDegree
@@ -109,7 +109,7 @@ sampleSize <- function(PilotData, method = c("Langaas", "Storey", "Ferreira", "R
 }  
 
 ##estimate density of effect sizes
-deconvolution <- function(obj, adjust)
+deconvolution <- function(obj, adjust, a)
 {
 	N <- length(obj@theta)
 	M <- length(obj@testStatistics)  	
@@ -123,8 +123,8 @@ deconvolution <- function(obj, adjust)
 	
 	delta <- 2*(up-lo)/(2*N-1)
 	
-	tk <- (1:(2*N))*delta
-	tk[(N+2):(2*N)] <- -tk[N:2]
+	#tk <- (1:(2*N))*delta
+	#tk[(N+2):(2*N)] <- -tk[N:2]
 
 	xk <- (1:(2*N ))*(2*pi)/(delta*2*N)
 	xk[(N+2):(2*N)] <- -xk[N:2]
@@ -175,8 +175,7 @@ deconvolution <- function(obj, adjust)
 		#idx <- which.min(diff)
 		#Gm <- y[idx]/fz[idx]
 		#obj@pi0[["Adjusted"]] <- Gm		
-		#Better Upper Bound Estimates for pi0 Efron et al. (2001) Empirical Bayes Analysis of a Microarray Experiment
-		a <- 0.5	
+		#Better Upper Bound Estimates for pi0 Efron et al. (2001) Empirical Bayes Analysis of a Microarray Experiment		
 	  indices <- which(x > -a & x < a)
 		Gm <- sum(y[indices])/sum(fz[indices]) #or 2*pnorm(a) - 1 or 2 *pt(a, df=obj@dof)- 1
 		obj@pi0[["Adjusted"]] <- Gm		
