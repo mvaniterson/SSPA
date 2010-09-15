@@ -30,7 +30,7 @@
 \author{Maarten van Iterson and Ren{\'e}e de Menezes\\
 Center for Human and Clinical Genetics,\\
  Leiden University Medical Center, The Netherlands\\
-Package \texttt{SSPA}, version 1.5.4\\
+Package \texttt{SSPA}, version 1.5.5\\
 }
 
 \maketitle
@@ -310,6 +310,14 @@ Ferreira \textit{et al.} propose a semi-parametric method to estimate the propor
 \subsection{Rupperts estimation method}
 
 For using the method proposed by Ruppert \cite{Ruppert2007} two additional packages need to be installed for using this method namely \texttt{quadprog} and \texttt{splines}. Using \texttt{sampleSize(pd, method="Ruppert", nKnots = 11, bDegree = 3)} both $\pi_{0}$ and the density of effect sizes is estimated by Ruppert's method.
+
+\section{Details}
+
+This document was written using:
+
+<<echo=FALSE,results=tex>>=
+toLatex(sessionInfo())
+@
 
 \bibliographystyle{unsrt}
 \bibliography{SSPA}

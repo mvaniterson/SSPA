@@ -7,7 +7,7 @@
 }
 
 \usage{
-sampleSize(PilotData, method = c("Langaas", "Storey", "Ferreira", "Ruppert", "Userdefined"), from = -6, to = 6, resolution = 2^10, kernel = c("fan", "wand", "sinc"), pi0 = seq(0.1, 0.99, 0.01), adjust=TRUE, nKnots = 11, bDegree = 3, ...)
+sampleSize(PilotData, method = c("Langaas", "Storey", "Ferreira", "Ruppert", "Userdefined"), from = -6, to = 6, resolution = 2^10, kernel = c("fan", "wand", "sinc"), pi0 = seq(0.1, 0.99, 0.01), adjust=TRUE, a=0.5, nKnots = 11, bDegree = 3, ...)
 }
 
 \arguments{
@@ -29,6 +29,7 @@ sampleSize(PilotData, method = c("Langaas", "Storey", "Ferreira", "Ruppert", "Us
       \item "sinc"}}
   \item{pi0}{numeric or a vector of type numeric giving the fraction of non-differentially expressed genes. If \code{method="Userdefined"} a userdefined pi0 is obligated. If method="Ferreira" a range of values should be given e.g. \code{seq(0.01, 0.99, 0.01)}}
 	\item{adjust}{is the density of effect sizes adjusted (\code{adjust=TRUE}, default) or not  (\code{adjust=FALSE})}
+	\item{a}{For better upper bound estimates of pi0 as described by Efron \emph{et al.} (2001).}
 	\item{nKnots}{ number of knots used in Rupperts method for estimating the proportion of non-differentially expressed genes and density of effect-sizes}
 	\item{bDegree}{degree of B-spline basis used in Rupperts method for estimating the proportion of non-differentially expressed genes and density of effect-sizes}
   \item{\dots}{Additional parameters for method for the estimation of the fraction of non-differentially expressed genes (Doesn't work yet!)}
@@ -57,7 +58,14 @@ A direct approach to false discovery rates.
 
 Ruppert, D. and Nettleton, D. and Hwang, J.T.G., (2007).
 Exploring the information in p-values for the analysis and planning of multiple-test experiments.
-\emph{Biometrics}, 63, 2, 483-95.}
+\emph{Biometrics}, 63, 2, 483-95.
+
+Efron, B.  and Tibshirani, R. and Storey, J.D. and Tusher, V. (2001)
+Empirical Bayes Analysis of a Microarray Experiment.
+\emph{Journal of the American Statistical Association}, 96, 456, 1151-1160.
+}
+
+
 
 \author{Maarten van Iterson}
 
