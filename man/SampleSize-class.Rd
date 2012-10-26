@@ -1,6 +1,11 @@
 \name{SampleSize-class}
 \docType{class}
 \alias{SampleSize-class}
+\alias{lambda,SampleSize-method}
+\alias{pi0,SampleSize-method}
+\alias{plot,SampleSize-method}
+\alias{show,SampleSize-method}
+\alias{theta,SampleSize-method}
 
 \title{Class SampleSize}
 \description{By contructing an object of \code{SampleSize} the power and sample size analysis will be performed.}
@@ -19,19 +24,24 @@ Objects can be created by calling the function \code{\link{sampleSize}}.
     \item{\code{kernel}:}{kernel used for the deconvolution estimator, \code{"character"}}
     \item{\code{nKnots}:}{number of knots used for the B-splines (only visible if \code{method="Ruppert"})}
     \item{\code{bDegree}:}{B-spline degree(only visible if \code{method="Ruppert"})}
-     \item{\code{name}:}{name of the pilot data, type \code{"character"}}
-    \item{\code{testStatistics}:}{vector of test statistics, type \code{"numeric"}}
-    \item{\code{sampleSize}:}{effective sample size \eqn{(\frac{1}{n_A}+\frac{1}{n_B})^{-1}} with \eqn{n_A} the sample size in group A, type \code{"numeric"}}
-    \item{\code{pValues}:}{vector of p-values, type \code{"numeric"}}
+    \item{\code{statistics}:}{vector of test statistics, type \code{"numeric"}}
+    \item{\code{effectivesampleSize}:}{effective sample size \eqn{(\frac{1}{n_A}+\frac{1}{n_B})^{-1}} with \eqn{n_A} the sample size in group A, type \code{"numeric"}}
+    \item{\code{pvalues}:}{vector of p-values, type \code{"numeric"}}
     \item{\code{dof}:}{degrees of freedom only used for Student t distribution, type \code{"numeric"}}
-    \item{\code{nullDist}:}{null distribution either normal or Student t, type \code{"character"}}
+    \item{\code{distribution}:}{null distribution either normal or Student t, type \code{"character"}}
   }
 }
 \section{Extends}{
 Class \code{\linkS4class{PilotData}}, directly.
 }
 \section{Methods}{
-\code{\link{show,SampleSize-method}}, \code{\link{Power}} and \code{\link{plotEffectSize}}
+  \describe{
+    \item{lambda}{\code{signature(object = "SampleSize")}: ... }
+    \item{pi0}{\code{signature(object = "SampleSize")}: ... }
+    \item{plot}{\code{signature(x = "SampleSize")}: ... }
+    \item{show}{\code{signature(object = "SampleSize")}: ... }
+    \item{theta}{\code{signature(object = "SampleSize")}: ... }
+	 }
 }
 
 \author{Maarten van Iterson}

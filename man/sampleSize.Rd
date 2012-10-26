@@ -7,7 +7,7 @@
 }
 
 \usage{
-sampleSize(PilotData, method = c("Langaas", "Storey", "Ferreira", "Ruppert", "Userdefined"), from = -6, to = 6, resolution = 2^10, kernel = c("fan", "wand", "sinc"), pi0 = seq(0.1, 0.99, 0.01), adjust=TRUE, a=0.5, nKnots = 11, bDegree = 3, ...)
+sampleSize(PilotData, method = c("Langaas", "Storey", "Ferreira", "Ruppert", "Userdefined"), from = -6, to = 6, resolution = 2^10, kernel = c("fan", "wand", "sinc"), pi0 = seq(0.1, 0.99, 0.01), adjust=TRUE, a=0.5, bandwidth, nKnots = 11, bDegree = 3, ...)
 }
 
 \arguments{
@@ -30,6 +30,7 @@ sampleSize(PilotData, method = c("Langaas", "Storey", "Ferreira", "Ruppert", "Us
   \item{pi0}{numeric or a vector of type numeric giving the fraction of non-differentially expressed genes. If \code{method="Userdefined"} a userdefined pi0 is obligated. If method="Ferreira" a range of values should be given e.g. \code{seq(0.01, 0.99, 0.01)}}
 	\item{adjust}{is the density of effect sizes adjusted (\code{adjust=TRUE}, default) or not  (\code{adjust=FALSE})}
 	\item{a}{For better upper bound estimates of pi0 as described by Efron \emph{et al.} (2001).}
+	\item{bandwidth}{Bandwidth for the kernel estimator, default is the plugging bandwidth of Fan.}
 	\item{nKnots}{ number of knots used in Rupperts method for estimating the proportion of non-differentially expressed genes and density of effect-sizes}
 	\item{bDegree}{degree of B-spline basis used in Rupperts method for estimating the proportion of non-differentially expressed genes and density of effect-sizes}
   \item{\dots}{Additional parameters for method for the estimation of the fraction of non-differentially expressed genes (Doesn't work yet!)}
@@ -65,8 +66,6 @@ Empirical Bayes Analysis of a Microarray Experiment.
 \emph{Journal of the American Statistical Association}, 96, 456, 1151-1160.
 }
 
-
-
 \author{Maarten van Iterson}
 
 \seealso{\code{\link[limma]{convest}}, \code{\link[qvalue]{qvalue}} and \code{\linkS4class{SampleSize}} use \code{class?SampleSize}}
@@ -76,8 +75,9 @@ library(multtest)
 data(golub)
 teststat <- mt.teststat(golub, golub.cl)
 table(golub.cl)
-pd <- pilotData(name="golub", testStatistics=teststat, sampleSizeA=11, sampleSizeB=27)
-hist(pd)
+X <- model.matrix(~golub.cl)
+effectivesamplesize <- 1/solve(crossprod(X))[2,2]
+pd <- pilotData(statistics=teststat, effectivesamplesize=effectivesamplesize)
 plot(pd)
 ss <- sampleSize(pd)
 }

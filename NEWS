@@ -5,21 +5,34 @@
 	*						 *
 	**************************************************
 
+		CHANGES IN SSPA VERSION 1.5.1
+		
+NEW FEATURES
 
-		CHANGES IN SSPA VERSION 1.5.4
+    o Accessor functions for both PilotData and SampleSize class
+    o Added Nutrigenomics data for use in examples
+    o Updated the citation
+    o Updated the vignette
+    o Plots produced by the packages are now using the lattice packages	
 
+BUG FIXES
+
+    o replaced call .C("massdist", ... package="stats") to .C("massdist", ... package="sspa")
+
+
+		CHANGES IN SSPA VERSION 1.5.0
 
 NEW FEATURES
 
-    o	Added Student t distribution as distribution for non-differentially expressed genes
-		o Added moderated version of the Student t distribution for more reliable results when using SSPA in combination with limma
-		o Better upper bound estimates for pi0 taken from Efron et al. (2001)	Empirical Bayes Analysis of a Microarray Experiment.
-		o Replaced FFT derived characteristic function by analytical expression for the characteristic functions both normal and Student t
+    o Added Student t distribution as distribution for non-differentially expressed genes
+    o Added moderated version of the Student t distribution for more reliable results when using SSPA in combination with limma
+    o Better upper bound estimates for pi0 taken from Efron et al. (2001) Empirical Bayes Analysis of a Microarray Experiment.
+    o Replaced FFT derived characteristic function by analytical expression for the characteristic functions both normal and Student t
    
 
 BUG FIXES
 
-		o In function Power(): corrected the effective sample size if user defined
+    o In function Power(): corrected the effective sample size if user defined
     o	Figure captions in vignette modified
 
 	
