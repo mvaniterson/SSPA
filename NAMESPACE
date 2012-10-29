@@ -1,5 +1,7 @@
+useDynLib(SSPA)
+
 importClassesFrom(methods,
-	                character,
+	          character,
                   list,
                   logical,
                   missing,
@@ -10,8 +12,7 @@ importMethodsFrom(methods,
 
 importFrom(graphics,
            abline,
-           arrows,
-           hist,
+           arrows,           
            legend,
            matlines,
            matplot,
@@ -21,6 +22,19 @@ importFrom(graphics,
 
 importFrom(limma, 
            convest)
+
+importFrom(lattice,
+	   trellis.par.get, 
+	   histogram, 
+           xyplot,
+	   qqmath,
+	   panel.histogram,
+	   panel.mathdensity,
+           panel.xyplot,
+           panel.abline,
+           panel.qqmathline,
+           panel.qqmath,
+           prepanel.qqmathline)
 
 importFrom(methods, 
            "@<-",
@@ -38,7 +52,9 @@ importFrom(stats,
            pt,
            qt)  
 
-export(pilotData, sampleSize, Power, plotEffectSize)
+export(pilotData, sampleSize, power)
+exportMethods(plot, show)
+exportMethods(statistics, effectivesamplesize, dof, distribution, pvalues)
+exportMethods(pi0, lambda, theta)
 
-exportMethods(plot, hist, show)
 
