@@ -10,6 +10,7 @@ LazyLoad: yes
 Imports: graphics, limma, lattice, methods, stats
 Depends: R (>= 2.8), methods, qvalue 
 Suggests: multtest, splines, convert, marray
+Enhances: quadprog, splines
 biocViews: Microarray, Statistics
 URL: http://www.humgen.nl/MicroarrayAnalysisGroup.html
 Collate: PilotDataClass.R SampleSizeClass.R RuppertsMethod.R

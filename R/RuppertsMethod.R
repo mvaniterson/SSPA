@@ -30,7 +30,9 @@ GCV <- function(lambda, y, X, D, B)
 psreg <- function(object,  resolution = 1000)
 {	
 	if(!require(quadprog)) warning("In order to use Ruppert's method, the package 'quadprog' must be installed!")
+        else require(quadprog)          
 	if(!require(splines)) warning("In order to use Ruppert's method, the package 'splines' must be installed!")
+        else require(splines)
 	
 	M <- length(pvalues(object))  	
 	w <- 1/(resolution+1)
