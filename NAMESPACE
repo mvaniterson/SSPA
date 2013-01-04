@@ -37,7 +37,6 @@ importFrom(lattice,
            prepanel.qqmathline)
 
 importFrom(methods, 
-           "@<-",
            new)
 
 importFrom(stats,
