@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <R_ext/Print.h>
 
 #define STEPREDN 0.2 
 #define ACCTOL 0.0001 

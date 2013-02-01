@@ -2,7 +2,7 @@ Package: SSPA
 Type: Package
 Title: General Sample Size and Power Analysis for Microarray and
     Next-Generation Sequencing Data
-Version: 1.99.2
+Version: 1.99.3
 Author: Maarten van Iterson
 Maintainer: Maarten van Iterson <mviterson@gmail.com>
 Description: General Sample size and power analysis for microarray and
