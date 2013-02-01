@@ -159,7 +159,7 @@ toLatex(sessionInfo())
 @ 
 
 \bibliographystyle{unsrt} 
-\bibliography{thesis}
+\bibliography{SSPA}
 
 \end{document}
 
