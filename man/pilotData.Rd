@@ -1,39 +1,40 @@
 \name{pilotData}
 \alias{pilotData}
-
-\title{Creates an object of class "PilotData"}
-
-\description{The function \code{pilotData} initializes a \code{\linkS4class{PilotData}}-object. Information of the pilot data and the null distribution is stored e.g. name of pilot experiment, test statistics and number of samples used.}
-
-\usage{pilotData(statistics = NULL, effectivesamplesize = NULL, dof=double(1), distribution = c("Normal", "Student"))}
-
+\title{User friendly interface to class "PilotData"}
+\usage{
+  pilotData(statistics = NULL, samplesize = NULL,
+    distribution = c("norm", "t", "f", "chisq"), ...)
+}
 \arguments{
-  \item{statistics}{vector of type numeric containing the set of test statistics}
-  \item{effectivesamplesize}{the effective sample size}
-	\item{dof}{degrees of freedom, only necessary when \code{distribution=="Student"}}
-  \item{distribution}{distribution under the null hypothesis either one of:
-    \itemize{
-      \item "Normal",
-      \item "Student",       
-    }}}
+  \item{statistics}{vector of test statistics}
 
-\details{Based on the given null distribution two-sided p-values are calculated from the test statistics. Some additional checks on the data are performed. Once an object of \code{\linkS4class{PilotData}} is created the \code{\link{sampleSize}}-function can be called.
+  \item{samplesize}{total sample size of the pilot-data or
+  effective sample size in two-group case (see Details for
+  more information).}
+
+  \item{distribution}{type of the null/alternative
+  distribution, one of 'norm', 't', 'f' or 'chisq'}
+
+  \item{...}{additional arguments for the distribution like
+  degrees of freedom}
 }
-
-\value{object of class \code{\linkS4class{PilotData}}}
-
-\author{Maarten van Iterson}
-
-\seealso{\code{plot} and \code{\linkS4class{PilotData}} use \code{class?PilotData}}
-
+\value{
+  object of class "PilotData"
+}
+\description{
+  User friendly interface to class "PilotData"
+}
+\details{
+  details follow In the two-group case the effective sample
+  size is defined as the square-root of the inverse of 1/n1
+  + 1/n2.
+}
 \examples{
-library(multtest)
-data(golub)
-teststat <- mt.teststat(golub, golub.cl)
-table(golub.cl)
-X <- model.matrix(~golub.cl)
-effectivesamplesize <- 1/solve(crossprod(X))[2,2]
-pd <- pilotData(statistics=teststat, effectivesamplesize=effectivesamplesize)
+pd <- pilotData(statistics=rnorm(100), samplesize=10, distribution="norm")
+pd
+plot(pd)
+}
+\author{
+  Maarten van Iterson
 }
 
-\keyword{classes}

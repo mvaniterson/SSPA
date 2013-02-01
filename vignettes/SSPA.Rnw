@@ -1,0 +1,167 @@
+%                     
+% NOTE -- ONLY EDIT THE .Rnw FILE!!!  The .tex file is
+% likely to be overwritten.
+% 
+% \VignetteIndexEntry{SSPA Overview}
+% \VignetteDepends{SSPA, genefilter, lattice, limma, qvalue}
+% \VignetteKeywords{Power and sample size analysis, Microarray data, RNAseq data}
+% \VignettePackage{SSPA}
+
+\documentclass{article}
+
+\newcommand{\Rfunction}[1]{{\texttt{#1}}}
+\newcommand{\Rmethod}[1]{{\texttt{#1}}}
+\newcommand{\Rcode}[1]{{\texttt{#1}}}
+\newcommand{\Robject}[1]{{\texttt{#1}}}
+\newcommand{\Rpackage}[1]{{\textit{#1}}}
+\newcommand{\Rclass}[1]{{\textit{#1}}}
+
+\newcommand{\field}[1]{\mathbb{#1}}
+\newcommand{\norm}[1]{\left|\left|#1\right|\right|}
+
+\usepackage{nicefrac}
+\usepackage{amssymb, amsmath}
+\usepackage{hyperref}
+\usepackage{times}
+
+
+\begin{document}
+\title{General Sample Size and Power Analysis for high-dimensional genomic data}
+\author{Maarten van Iterson and Ren{\'e}e de Menezes\\
+  Center for Human and Clinical Genetics,\\
+  Leiden University Medical Center, The Netherlands\\
+  Package \Rpackage{SSPA}, version \Sexpr{packageVersion("SSPA")}\\
+}
+
+\maketitle
+\tableofcontents{}
+
+\SweaveOpts{keep.source=FALSE}
+
+\section{Introduction}
+Power and sample size analysis or sample size determination is concerned with the question of determining the minimum number of samples necessary to demonstrate the existence (or absence) of a difference between two or more populations of interest. The number of samples should be sufficient in that the statistical test will reject the null hypothesis, when there really exists a difference, with high probability or power.
+
+The statistical \emph{power} of a test is the probability of the test to report a significant result when there truly exists a difference, i.e. if an gene is truly differentially expressed, how likely are we to discover it? Technically, it is the probability complement of a \emph{type II error}, or false negative (the probability of rejecting the null hypothesis, when a gene is truly differentially expressed).
+
+Understanding the role of sample size and other factors that contribute to the power of a test allows researchers to design studies that have a satisfactory probability of detecting the effects they are interested in. But note that an over-powered study may be just as undesirable as an under-powered study. Increasing sample size, in particular, almost always has financial and other costs associated with it. Where the study involves exposing people to risk or discomfort, the researcher has an ethical dimension to consider \cite{Baguley2004}.
+
+For each individual test, factors that contribute to the power are sample size, \emph{effect size}, \emph{standard deviation} and significance level. Power increases when effect size and/or sample size increases or when the standard deviation decreases. If significance level increases, say, from $0.01$ to $0.05$, power also increases. A test based on a balanced design (equal sample sizes of the groups) will be more powerful than for an unbalanced design.
+
+The minimal sample size required can be determined by performing a simulation experiment or using pilot data, the former uses \emph{prior} knowledge or a guess for the effect size and standard deviation, the latter is based on a pilot experiment where effect size and standard deviation are estimated from the pilot data. 
+
+Sample size determination for experiments involving high-dimensional data has several challenges as a multiple testing problem is involved, furthermore the occurrence of differentially and nondifferentialy expressed genes and that each gene individually has an effect size and a standard deviation leading to a distribution of effect sizes and standard deviations complicates the problem even further.  
+
+Power and sample size analysis for high-dimensional data was initiated by \cite{Lee2002}. The multiple testing problem was controlled using the easy to apply \emph{family-wise error rate}. Since controlling the family-wise error rate is too conservative for microarray data, methods were proposed that control the multiple testing problem using the false discovery rate \cite{Pawitan2005, Liu2007, Tong2008}. Recently, those methods were adapted for using pilot-data in order to obtain more realistic estimates of the power \cite{Ferreira2006c, Ruppert2007, Jorstad2008}. 
+
+This vignette describes \Rpackage{SSPA}, a package implementing a general pilot data-based method for power and sample size determination for high-dimensional genomic data, such as those obtained from microarray or next-generation sequencing experiments. The method is based on the work of Ferreira and Zwinderman \cite{Ferreira2006c} and generalized as described by van Iterson \textit{et al.} \cite{vanIterson2009, vanIterson2013}.\\
+
+By means of two simple commands (\Rfunction{pilotData()}, \Rfunction{sampleSize()}), a researcher can read in their data and compute the desired estimates. Other functions are provided to facilitate interpretation of results. Simulation data is used to show the general functionality and flexibility of the package and two interesting biological case study are shown.
+
+\section{Simulated data}
+
+<<echo=FALSE>>=
+options(width=60)
+@
+
+This simulation study represents a two group microarray experiment with $m = 5000$ features and $N = 10$ samples per group. Let $R_{ij}$ and $S_{ij}$, $i = 1, \ldots, m$, $j = 1, \ldots, N$ be random variables where $S_{ij} \sim N(\nicefrac{-\mu_i}{2}, 1)$ and $R_{ij} \sim N(\nicefrac{\mu_i}{2}, 1)$ with the first $\mu_{i} = 0$ for $i = 1, \ldots, m_0$ and the remaining $\mu_i$ for $i = m_0 + 1, \ldots, m$ were drawn from a symmetric bi-triangular distribution as described by \cite{Langaas2005}. A total of $25$ data sets were simulated with the proportion of non-differentially expressed features fixed at $\pi_0 = 0.8$. Additional technical noise is added to the model using $X \sim \log(e^R + e^\epsilon)$ and $Y \sim \log(e^S + e^\epsilon)$ with $\epsilon \sim N(0, 0.1^2)$, so that the noise is positive and additive. 
+
+<<simulated-data-generation>>=
+library(SSPA)
+library(genefilter)
+set.seed(12345)
+m <- 5000
+J <- 10
+pi0 <- 0.8
+m0 <- as.integer(m*pi0)
+mu <- rbitri(m - m0, a = log2(1.2), b = log2(4), m = log2(2))
+data <- simdat(mu, m=m, pi0=pi0, J=J, noise=0.01)
+statistics <- rowttests(data, factor(rep(c(0, 1), each=J)))$statistic
+@
+
+\subsection{Deconvolution}
+
+The first step in doing the sample size and power analysis is creating a object of class \Rclass{PilotData} which will contain all the necessary information needed for the following power and sample size analysis; a vector of test-statistics and the sample sizes used to compute them. A user-friendly interface for creating an object of \Rclass{PilotData} is available as \Rfunction{pilotData()}.
+
+Several ways of viewing the content of the PilotData object are possible either graphically or using a show-method by just typing the name of the created
+object of \Rclass{PilotData}:
+
+<<simulated-data-plotting, fig=TRUE>>=
+pdD <- pilotData(statistics = statistics, samplesize = sqrt(1/(1/J +1/J)), distribution="norm")
+pdD
+plot(pdD)
+@
+
+Now we can create an object of class \Rclass{SampleSize} which will perform the estimation of the proportion of non-differentially expressed genes and the density of effect sizes. Several options are available see \Rcode{?sampleSize}. 
+
+The density of effect size can be shown by a call to \Rfunction{plot()}. When there are both up- and down-regulated genes a bimodal density is observed.
+
+<<simulated-data-deconvolution, fig=TRUE>>=
+ssD <- sampleSize(pdD, control=list(from=-6, to=6))
+ssD
+plot(ssD, panel = function(x, y, ...){ panel.xyplot(x, y); panel.curve(dbitri(x), lwd=2, lty=2, n=500)}, ylim=c(0, 0.6))
+@ 
+
+Estimating the average power for other sample sizes then that of the pilot-data can be performed with the \Rfunction{predictpower()}-function. The user can also give the desired false discovery rate level.
+
+<<simulated-data-power, fig=TRUE>>=
+Jpred <- seq(10, 20, by=2)
+N <- sqrt(Jpred/2)
+pwrD <- predictpower(ssD, samplesizes=N, alpha=0.05)
+matplot(Jpred, pwrD, type="b", pch=16, ylim=c(0, 1), ylab="predicted power", xlab="sample size (per group)")
+grid()
+@ 
+
+\subsection{Conjugate Gradient}
+
+<<simulated-data-effectsize, fig=TRUE>>=
+pdC <- pilotData(statistics = statistics, samplesize = sqrt(2*J), distribution="t", df=2*J-2)
+ssC <- sampleSize(pdC, method="congrad", control=list(from=-6, to=6, resolution=250))
+plot(ssC, panel = function(x, y, ...){ panel.xyplot(x, y); panel.curve(2*dbitri(2*x), lwd=2, lty=2, n=500) }, xlim=c(-2,2), ylim=c(0, 1.2))
+@
+
+\subsection{Tikhonov regularization}
+
+<<tikohonov, fig=TRUE>>=
+ssT <- sampleSize(pdC, method="tikhonov", control=list(resolution=250, scale="pdfstat", lambda = 10^seq(-10, 10, length=50), verbose=FALSE, modelselection="lcurve"))
+plot(ssT, panel = function(x, y, ...){ panel.xyplot(x, y, type="b"); panel.curve(2*dbitri(2*x), lwd=2, lty=2, n=500)}, xlim=c(-2,2), ylim=c(0, 1.2))
+@
+
+\section{Case Study: Nutrigenomics microarray data}
+
+<<nutrigenomics-effectsize, fig=TRUE>>=
+library(lattice)
+data(Nutrigenomics)
+str(Nutrigenomics)
+pd <- apply(Nutrigenomics, 2, function(x) pilotData(statistics=x[-1], samplesize=sqrt(x[1]), distribution="norm"))
+ss <- lapply(pd, sampleSize,  control=list(pi0Method="Storey", a=0, resolution=2^10, verbose=FALSE))
+ss <- lapply(pd, sampleSize,  method = "congrad", control=list(verbose=FALSE, resolution=2^10, from=-10, to=10))
+
+##ss <- lapply(pd, sampleSize, method="congrad", control=list(verbose=FALSE)) ##Almost identical!!!
+effectsize <- data.frame(exposure = factor(rep(rep(c("5 Days", "6 Hours"), c(2, 3)), each=1024)), compound =  factor(rep(c("Wy14,643", "fenofibrate", "trilinolenin (C18:3)", "Wy14,643", "fenofibrate"), each=1024)), lambda  = as.vector(sapply(ss, function(x)x@lambda)), theta  = as.vector(sapply(ss, function(x)x@theta)))
+print(xyplot(lambda~theta|exposure, group=compound, data=effectsize, type=c("g", "l"), layout=c(1,2), lwd=2, xlab="effect size", ylab="", auto.key=list(columns=3, lines=TRUE, points=FALSE, cex=0.7)))
+@
+
+<<nutrigenomics-power, fig=TRUE>>=
+samplesize <- seq(2, 8)
+averagepower <- data.frame(power = as.vector(sapply(ss, function(x) as.numeric(predictpower(x, samplesize=sqrt(samplesize))))), exposure = factor(rep(rep(c("5 Days", "6 Hours"), c(2, 3)), each=length(samplesize))), compound = factor(rep(c("Wy14,643", "fenofibrate", "trilinolenin (C18:3)", "Wy14,643", "fenofibrate"), each=length(samplesize))), samplesize = rep(2*samplesize, 5))
+print(xyplot(power~samplesize|exposure, group=compound, data=averagepower, type=c("g", "b"), layout=c(1,2), lwd=2, pch=16, xlab="sample size (per group)", ylab="", auto.key=list(columns=3, lines=TRUE, points=FALSE, cex=0.7)))
+@
+\section{Case Study: deepSAGE of wild-type vs Dclk1 transgenic mice}
+
+\clearpage
+
+\section{Session info}
+
+The version number of R and packages loaded for generating the vignette were:
+
+<<sessioninfo, results=tex, echo=FALSE>>=
+toLatex(sessionInfo())
+@ 
+
+\bibliographystyle{unsrt} 
+\bibliography{thesis}
+
+\end{document}
+
+
+

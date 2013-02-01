@@ -5,6 +5,17 @@
 	*						 *
 	**************************************************
 
+		CHANGES IN SSPA VERSION 1.99.0
+		
+NEW FEATURES
+
+    o Added new estimation method for the density of effect sizes and proportion of non differentially expressed genes
+    o power and sample size analysis can now also be performed for experimental designs that lead to F and \chi^2 statistics e.g. RNAseq data    
+
+BUG FIXES
+
+    o suppressWarings from dt or pt when ncp is large
+
 		CHANGES IN SSPA VERSION 1.5.1
 		
 NEW FEATURES
@@ -33,7 +44,7 @@ NEW FEATURES
 BUG FIXES
 
     o In function Power(): corrected the effective sample size if user defined
-    o	Figure captions in vignette modified
+    o Figure captions in vignette modified
 
 	
 
