@@ -25,7 +25,7 @@
   Package \Rpackage{SSPA}, version \Sexpr{packageVersion("SSPA")}\\
 }
 
-\date{Modified: 19 Februari, 2013. Compiled: \today}
+\date{Modified: 5 March, 2013. Compiled: \today}
 
 \maketitle
 \tableofcontents{}
@@ -140,25 +140,35 @@ plot(ssT, panel = function(x, y, ...)
 @
 
 \section{Case Study: Nutrigenomics microarray data}
+In this first example a set consisted of Affymetrix array data derived from a nutrigenomics experiment in which weak, intermediate and strong PPAR$\alpha$ agonists were administered to wild-type and PPAR$\alpha$-null mice is used. The power and sample size analysis confirms the hierarchy of PPAR$\alpha$-activating compounds previously reported and the general idea that larger effect sizes positively contribute to the average power of the experiment.\\
+
+PPAR$\alpha$ is a transcription factor that is activated upon binding by a variety of agonists, both of synthetic and natural origin. In this experiment the outcome of specific PPAR$\alpha$ activation on murine small intestinal gene expression was examined using Affymetrix GeneChip Mouse 430 2.0 arrays. PPAR$\alpha$ was activated by several PPAR$\alpha$-agonists that differed in activating potency. Data of three agonists were used, namely Wy14,643, fenofibrate and trilinolenin (C18:3). The first two compounds belong to the fibrate class of drugs that are widely prescribed to treat dyslipidemia, whereas trilinolenin is an agonist frequently found in the human diet. For intestinal PPAR$\alpha$, Wy14,643 is the most potent agonist followed by C18:3 and fenofibrate. Since time of exposure also affects the effect size, intestines were collected 6 hrs (all three agonists) or 5  days (Wy14,643 and fenofibrate only) after exposure. Expression estimates of probesets were obtained by GC-robust multi-array (GCRMA) analysis, employing the empirical Bayes approach for background adjustment, followed by quantile normalization and summarization. For each compound and exposure time, lists of moderated t-test statistics were computed, using the empirical Bayes linear regression model as implemented in \Rpackage{limma}, for each contrast representing the effect of compound in PPAR$\alpha$-null mice compared to wild-type mice. For more details see \cite{vanIterson2009}.
 
 <<nutrigenomics-effectsize, fig=TRUE>>=
 library(lattice)
 data(Nutrigenomics)
 str(Nutrigenomics)
-pd <- apply(Nutrigenomics, 2, function(x) pilotData(statistics=x[-1], 
-                                                    samplesize=sqrt(x[1]), 
-                                                    distribution="norm"))
+pd <- apply(Nutrigenomics, 2, 
+            function(x) pilotData(statistics=x[-1], 
+                                  samplesize=sqrt(x[1]), 
+                                  distribution="norm"))
 ss <- lapply(pd, sampleSize,  
              control=list(pi0Method="Storey", a=0, resolution=2^10, verbose=FALSE))
-ss <- lapply(pd, sampleSize,  
-             method = "congrad", 
-             control=list(verbose=FALSE, resolution=2^10, from=-10, to=10))
 
+##ss <- lapply(pd, sampleSize,  
+##             method = "congrad", 
+##             control=list(verbose=FALSE, resolution=2^10, from=-10, to=10))
 
-effectsize <- data.frame(exposure = factor(rep(rep(c("5 Days", "6 Hours"), c(2, 3)), each=1024)), 
-                         compound = factor(rep(c("Wy14,643", "fenofibrate", "trilinolenin (C18:3)", "Wy14,643", "fenofibrate"), each=1024)), 
-                         lambda = as.vector(sapply(ss, function(x)x@lambda)), 
-                         theta = as.vector(sapply(ss, function(x)x@theta)))
+compounds <- c("Wy14,643",  "fenofibrate", "trilinolenin (C18:3)", "Wy14,643", "fenofibrate")
+exposure <- c("5 Days", "6 Hours")
+
+effectsize <- data.frame(exposure = factor(rep(rep(exposure, c(2, 3)), each=1024)), 
+                         compound = factor(rep(compounds, each=1024)), 
+                         lambda = as.vector(sapply(ss, 
+                           function(x)x@lambda)), 
+                         theta = as.vector(sapply(ss, 
+                           function(x)x@theta)))
+
 print(xyplot(lambda~theta|exposure, group=compound, data=effectsize, 
              type=c("g", "l"), layout=c(1,2), lwd=2, xlab="effect size", ylab="", 
              auto.key=list(columns=3, lines=TRUE, points=FALSE, cex=0.7)))
@@ -166,15 +176,51 @@ print(xyplot(lambda~theta|exposure, group=compound, data=effectsize,
 
 <<nutrigenomics-power, fig=TRUE>>=
 samplesize <- seq(2, 8)
-averagepower <- data.frame(power = as.vector(sapply(ss, function(x) as.numeric(predictpower(x, samplesize=sqrt(samplesize))))), 
-                           exposure = factor(rep(rep(c("5 Days", "6 Hours"), c(2, 3)), each=length(samplesize))), 
-                           compound = factor(rep(c("Wy14,643", "fenofibrate", "trilinolenin (C18:3)", "Wy14,643", "fenofibrate"), each=length(samplesize))),
+averagepower <- data.frame(power = as.vector(sapply(ss, 
+                             function(x) as.numeric(predictpower(x, samplesize=sqrt(samplesize))))), 
+                           exposure = factor(rep(rep(exposure, c(2, 3)), each=length(samplesize))), 
+                           compound = factor(rep(compounds, each=length(samplesize))),
                            samplesize = rep(2*samplesize, 5))
+
 print(xyplot(power~samplesize|exposure, group=compound, data=averagepower, type=c("g", "b"), 
              layout=c(1,2), lwd=2, pch=16, xlab="sample size (per group)", ylab="", 
              auto.key=list(columns=3, lines=TRUE, points=FALSE, cex=0.7)))
 @
 \section{Case Study: deepSAGE of wild-type vs Dclk1 transgenic mice}
+In this example we will show how our method can be applied to count data of an RNA-seq experiment. We will use the data described by \cite{Hoen2008} comparing gene expression profiles in the hippocampi of transgenic $\delta$C-doublecortin-like kinase mice with that of wild-type mice. Data is available from GEO (GSE10782).\\
+
+and analyzed using the generalized linear model approach implemented in \Rpackage{edgeR}. A tag-wise dispersion parameter was estimated using the Cox-Reid adjusted profile likelihood approach for generalized linear models as implemented in \Rpackage{edgeR}. Using a treatment contrast, we tested per tag if there was a genotype effect using the likelihood ratio statistic. This test statistic follow asymptotically a $\chi^2$ distribution with one degree of freedom.
+
+<<obtain-teststatistics, eval=FALSE>>=
+##files contains the full path and file names of each sample
+targets <- data.frame(files=files,
+                      group=rep(c("DCLK", "WT"), 4), 
+                      description=rep(c("transgenic (Dclk1) mouse hippocampus", 
+                        "wild-type mouse hippocampus"), 4))
+d <- readDGE(targets) ##reading the data
+##filter out low read counts
+cpm.d <- cpm(d)
+d <- d[rowSums(cpm.d > 1) >= 4, ]
+
+design <- model.matrix(~group, data=d$samples) 
+##estimate dispersion
+disp <- estimateGLMCommonDisp(d, design)
+disp <- estimateGLMTagwiseDisp(disp, design)
+##fit model
+glmfit.hoen <- glmFit(d, design, dispersion = disp$tagwise.dispersion)
+##perform likelihood ratio test
+lrt.hoen <- glmLRT(glmfit.hoen)
+##extract results
+tbl <- topTags(lrt.hoen, n=nrow(d))[[1]]
+statistics <- tbl$LR
+@ 
+
+
+<<deepsage-effectsize, fig=TRUE, eval=FALSE>>=
+library(lattice)
+data(deepSAGE)
+str(deepSAGE)
+@ 
 
 \clearpage
 

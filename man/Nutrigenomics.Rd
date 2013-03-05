@@ -20,7 +20,7 @@ fibrate class of drugs that are widely prescribed to treat dyslipidemia, whereas
 For intestinal PPAR-alpha, Wy14,643 is the most potent agonist followed by C18:3 and fenofibrate. Since time of exposure also affects the effect size, intestines were collected 6 hrs (all three agonists) or 5  days (Wy14,643 and fenofibrate only) after exposure.
 }
 \source{
- van Iterson, M. 't Hoen, P.A.C. Pedotti, P. Hooiveld, G.J.E.J. den Dunnen, J.T. van Ommen, G.J.B. Boer, J.M.     Menezes, R.X., Relative power and  sample size analysis on gene expression profiling data, BMC  Genomics, (2009)  
+ van Iterson, M. 't Hoen, P.A.C. Pedotti, P. Hooiveld, G.J.E.J. den Dunnen, J.T. van Ommen, G.J.B. Boer, J.M. Menezes, R.X., Relative power and  sample size analysis on gene expression profiling data, BMC Genomics, (2009).  
 }
 %\references{}
 \examples{
