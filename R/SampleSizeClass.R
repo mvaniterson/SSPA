@@ -344,7 +344,10 @@ sampleSize <- function(PilotData, method = c("deconv", "congrad", "tikhonov", "f
                     tikhonov = tikhonovControl(control),
                     ferreira = deconvControl(control))
 
-  theta <- defineEffectSizeRange(object, control$from, control$to, control$resolution)
+  if(method == "deconv")
+    theta <- defineEffectSizeRange(object, control$from, control$to, control$resolution)
+  else
+    theta <- seq(from = control$from, to = control$to, length = control$resolution)
 
   ##update SampleSize-object
   object@control <- control

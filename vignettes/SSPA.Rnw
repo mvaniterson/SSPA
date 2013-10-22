@@ -226,11 +226,25 @@ tbl <- topTags(lrt.hoen, n=nrow(d))[[1]]
 statistics <- tbl$LR
 @ 
 
-<<deepsage-effectsize, eval=FALSE>>=
+<<deepsage-effectsize, fig=TRUE, include=FALSE>>=
 library(lattice)
 data(deepSAGE)
 str(deepSAGE)
+pd <- pilotData(statistics=deepSAGE,
+                samplesize=8, distribution="chisq", df=1)
+ss <- sampleSize(pd, method="congrad", 
+                 control=list(trim=c(0, 0.98), symmetric=FALSE, from=0, to=10)) 
+pwr <- predictpower(ss, samplesize=c(8, 16, 32))
+op <- par(mfcol=c(2,1), mar=c(5,4,1,1))
+plot(ss@theta, ss@lambda, 
+     xlab="effect size", ylab="", type="l")
+plot(c(8, 16, 32), pwr, 
+     xlab="sample size", ylab="power", type="b", ylim=c(0,1))
+grid(col=1)
+par(op)
 @ 
+
+\incfig{SSPA-deepsage-effectsize}{0.6\textwidth}{Deep SAGE example:}{Estimated density of effect size and predicted power curve.}
 
 \clearpage
 
