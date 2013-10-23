@@ -255,7 +255,6 @@ The version number of R and packages loaded for generating the vignette were:
 toLatex(sessionInfo())
 @ 
 
-\bibliographystyle{plain} 
 \bibliography{SSPA}
 
 \end{document}
