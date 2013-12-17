@@ -345,7 +345,11 @@ sampleSize <- function(PilotData, method = c("deconv", "congrad", "tikhonov", "f
                     ferreira = deconvControl(control))
 
   if(method == "deconv")
-    theta <- defineEffectSizeRange(object, control$from, control$to, control$resolution)
+    {
+      theta <- defineEffectSizeRange(object, control$from, control$to, control$resolution)
+      if(distribution(object) !=  "norm")
+        stop("Deconvolution estimator can only be used with distribution = 'norm'!")
+    }
   else
     theta <- seq(from = control$from, to = control$to, length = control$resolution)
 

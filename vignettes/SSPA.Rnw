@@ -107,6 +107,8 @@ grid()
 
 \incfig{SSPA-simulated-data-power}{0.6\textwidth}{Predicted power curve:}{For sample sizes from 10 to 20 the power is predicted based on the information obtained from the pilot-data.}
 
+The deconvolution estimator of the density of effect sizes is only applicable for two-group comparisons when the test statistics is (approximate) normally distributed. Note that in this situation we use the effective sample size. In all other cases e.g. two group comparison using the $t$ statistics with the Conjugate Gradient estimator for the density of effect sizes the total sample size is used.
+
 \subsection{Conjugate Gradient}
 
 <<simulated-data-effectsize, fig=TRUE, include=FALSE>>=

@@ -25,7 +25,7 @@
   User friendly interface to class "PilotData"
 }
 \details{
-  details follow In the two-group case the effective sample
+  In the two-group case the effective sample 
   size is defined as the square-root of the inverse of 1/n1
   + 1/n2.
 }
