@@ -1,8 +1,30 @@
-citHeader("To cite package 'SSPA' in publications use:")
+citEntry(entry="Article",
+   author="van Iterson, M.  and 't Hoen, P. A.  and Pedotti, P.  and Hooiveld, G. J.  and den Dunnen, J. T.  and van Ommen, G. J.  and Boer, J. M.  and Menezes, R. X. ",
+   title="{{R}elative power and sample size analysis on gene expression profiling data}",
+   journal="BMC Genomics",
+   year="2009",
+   volume="10",
+   pages="439",
+   url = "http://www.biomedcentral.com/1471-2164/10/439",
+textVersion = paste("van Iterson, M.  and 't Hoen, P. A.  and Pedotti, P.  and Hooiveld, G. J.  and den Dunnen, J. T.  and van Ommen, G. J.  and Boer, J. M.  and Menezes, R. X. ",
+"Relative power and sample size analysis on gene expression profiling data",
+"BMC Genomics", "2009(10)")
+)
 
-citEntry(entry="manual",
-         title = "SSPA: Power and Sample Size Analysis package",
-         author = personList(as.person("Maarten van Iterson"), as.person("Renee Menezes")),
-         textVersion = paste("van Iterson, M. 't Hoen, P.A.C. Pedotti, P. Hooiveld, G.J.E.J. den Dunnen, J.T. van Ommen, G.J.B. Boer, J.M. Menezes, R.X., Relative power and sample size analysis on gene expression profiling data, BMC Genomic, 2009, 10, 439--449", sep=""))   
+citEntry(entry="Article",
+   author="van Iterson, M.  and van de Wiel, M. A.  and Boer, J. M.  and de Menezes, R. X.",
+   title="{{G}eneral power and sample size calculations for high-dimensional genomic data}",
+   journal="Stat. Appl. Genet. Mol. Biol.",
+   year="2013",
+   volume="12",
+   number="4",
+   pages="449--467",
+   month="Aug",
+   url = "http://www.degruyter.com/view/j/sagmb.2013.12.issue-4/sagmb-2012-0046/sagmb-2012-0046.xml;jsessionid=E8FB8BC6012E9C8DB69C02FDAAC8DF04",
+   textVersion = paste("van Iterson, M.  and van de Wiel, M. A.  and Boer, J. M.  and de Menezes, R. X.",
+                       "General power and sample size calculations for high-dimensional genomic data",
+                       "Stat. Appl. Genet. Mol. Biol.", "2013(4), 12, 449-467")
+)
 
-citFooter("This free open-source software implements academic research by the authors and co-workers. If you use it, please support the project by citing the appropriate journal articles.")
+
+
