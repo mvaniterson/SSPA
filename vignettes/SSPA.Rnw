@@ -1,0 +1,265 @@
+%                     
+% NOTE -- ONLY EDIT THE .Rnw FILE!!!  The .tex file is
+% likely to be overwritten.
+% 
+% \VignetteIndexEntry{SSPA Overview}
+% \VignetteDepends{SSPA, genefilter, lattice, limma, qvalue}
+% \VignetteKeywords{Power and sample size analysis, Microarray data, RNAseq data}
+% \VignettePackage{SSPA}
+
+\documentclass{article}
+
+<<style, eval=TRUE, echo=FALSE, results=tex>>=
+BiocStyle::latex()
+@ 
+
+\usepackage{nicefrac}
+
+\title{General Sample Size and Power Analysis for high-dimensional genomic data}
+\author{Maarten van Iterson and Ren{\'e}e de Menezes\\
+  Center for Human and Clinical Genetics,\\
+  Leiden University Medical Center, The Netherlands\\
+  Package \Rpackage{SSPA}, version \Sexpr{packageVersion("SSPA")}\\
+}
+
+\date{Modified: 22 October, 2013. Compiled: \today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\section{Introduction}
+Power and sample size analysis or sample size determination is concerned with the question of determining the minimum number of samples necessary to demonstrate the existence (or absence) of a difference between two or more populations of interest. The number of samples should be sufficient in that the statistical test will reject the null hypothesis, when there really exists a difference, with high probability or power.
+
+Sample size determination for experiments involving high-dimensional data has several challenges as a multiple testing problem is involved, furthermore the occurrence of differentially and nondifferentialy expressed genes and that each gene individually has an effect size and a standard deviation leading to a distribution of effect sizes and standard deviations complicates the problem even further.  
+
+Power and sample size analysis for high-dimensional data was initiated by \cite{Lee2002}. The multiple testing problem was controlled using the easy to apply \emph{family-wise error rate}. Since controlling the family-wise error rate is too conservative for microarray data, methods were proposed that control the multiple testing problem using the false discovery rate \cite{Pawitan2005, Liu2007, Tong2008}. Recently, those methods were adapted for using pilot-data in order to obtain more realistic estimates of the power \cite{Ferreira2006c, Ruppert2007, Jorstad2008}. 
+
+This vignette describes \Rpackage{SSPA}, a package implementing a general pilot data-based method for power and sample size determination for high-dimensional genomic data, such as those obtained from microarray or next-generation sequencing experiments. The method is based on the work of Ferreira and Zwinderman \cite{Ferreira2006c} and generalized as described by van Iterson \textit{et al.} \cite{vanIterson2009, vanIterson2013}.\\
+
+By means of two simple commands (\Rfunction{pilotData()}, \Rfunction{sampleSize()}), a researcher can read in their data --a vector of test statistics-- and compute the desired estimates. Other functions are provided that facilitate interpretation of results. Simulation data is used to show the general functionality and flexibility of the package and two interesting biological case study are shown.
+
+\section{Simulated data}
+
+<<echo=FALSE>>=
+options(width=60)
+@
+
+This simulation study represents a two group microarray experiment with $m = 5000$ features and $N = 10$ samples per group. Let $R_{ij}$ and $S_{ij}$, $i = 1, \ldots, m$, $j = 1, \ldots, N$ be random variables where $S_{ij} \sim N(\nicefrac{-\mu_i}{2}, 1)$ and $R_{ij} \sim N(\nicefrac{\mu_i}{2}, 1)$ with the first $\mu_{i} = 0$ for $i = 1, \ldots, m_0$ and the remaining $\mu_i$ for $i = m_0 + 1, \ldots, m$ were drawn from a symmetric bi-triangular distribution as described by \cite{Langaas2005}. A total of $25$ data sets were simulated with the proportion of non-differentially expressed features fixed at $\pi_0 = 0.8$. Additional technical noise is added to the model using $X \sim \log(e^R + e^\epsilon)$ and $Y \sim \log(e^S + e^\epsilon)$ with $\epsilon \sim N(0, 0.1^2)$, so that the noise is positive and additive. 
+
+<<simulated-data-generation>>=
+library(SSPA)
+library(genefilter)
+set.seed(12345)
+m <- 5000
+J <- 10
+pi0 <- 0.8
+m0 <- as.integer(m*pi0)
+mu <- rbitri(m - m0, a = log2(1.2), b = log2(4), m = log2(2))
+data <- simdat(mu, m=m, pi0=pi0, J=J, noise=0.01)
+statistics <- rowttests(data, factor(rep(c(0, 1), each=J)))$statistic
+@
+
+\subsection{Deconvolution}
+
+The first step in doing the sample size and power analysis is creating a object of class \Rclass{PilotData} which will contain all the necessary information needed for the following power and sample size analysis; a vector of test-statistics and the sample sizes used to compute them. A user-friendly interface for creating an object of \Rclass{PilotData} is available as \Rfunction{pilotData()}.
+
+Several ways of viewing the content of the PilotData object are possible either graphically or using a show-method by just typing the name of the created
+object of \Rclass{PilotData}:
+
+<<simulated-data-plotting, fig=TRUE, include=FALSE>>=
+pdD <- pilotData(statistics = statistics, 
+                 samplesize = sqrt(1/(1/J +1/J)), 
+                 distribution="norm")
+pdD
+plot(pdD)
+@
+
+\incfig{SSPA-simulated-data-plotting}{0.6\textwidth}{Exploratory plots of the pilot-data:}{Upper left panel shows a histogram of the test statistics, upper right panel a histogram of the p-values. Lower left panel shows a qq-plot for the test statistics using the user-defined null distributions. Lower right panel shows the sorted p-values against their ranks.}
+
+Now we can create an object of class \Rclass{SampleSize} which will perform the estimation of the proportion of non-differentially expressed genes and the density of effect sizes. Several options are available see \Rcode{?sampleSize}. 
+
+The density of effect size can be shown by a call to \Rfunction{plot()}. When there are both up- and down-regulated genes a bimodal density is observed.
+
+<<simulated-data-deconvolution, fig=TRUE, include=FALSE>>=
+ssD <- sampleSize(pdD, control=list(from=-6, to=6))
+ssD
+plot(ssD, panel = function(x, y, ...)
+     { 
+       panel.xyplot(x, y)
+       panel.curve(dbitri(x), lwd=2, lty=2, n=500)
+     }, ylim=c(0, 0.6))
+@ 
+
+\incfig{SSPA-simulated-data-deconvolution}{0.6\textwidth}{Estimated density of effect sizes:}{True density of effect sizes, the bitriangular distribution, and estimated density of effect sizes in blue.}
+
+Estimating the average power for other sample sizes then that of the pilot-data can be performed with the \Rfunction{predictpower()}-function. The user can also give the desired false discovery rate level.
+
+<<simulated-data-power, fig=TRUE, include=FALSE>>=
+Jpred <- seq(10, 20, by=2)
+N <- sqrt(Jpred/2)
+pwrD <- predictpower(ssD, samplesizes=N, alpha=0.05)
+matplot(Jpred, pwrD, type="b", pch=16, ylim=c(0, 1),
+        ylab="predicted power", xlab="sample size (per group)")
+grid()
+@ 
+
+\incfig{SSPA-simulated-data-power}{0.6\textwidth}{Predicted power curve:}{For sample sizes from 10 to 20 the power is predicted based on the information obtained from the pilot-data.}
+
+The deconvolution estimator of the density of effect sizes is only applicable for two-group comparisons when the test statistics is (approximate) normally distributed. Note that in this situation we use the effective sample size. In all other cases e.g. two group comparison using the $t$ statistics with the Conjugate Gradient estimator for the density of effect sizes the total sample size is used.
+
+\subsection{Conjugate Gradient}
+
+<<simulated-data-effectsize, fig=TRUE, include=FALSE>>=
+pdC <- pilotData(statistics = statistics, 
+                 samplesize = sqrt(2*J), 
+                 distribution="t",
+                 df=2*J-2)
+ssC <- sampleSize(pdC, 
+                  method="congrad", 
+                  control=list(from=-6, to=6, resolution=250))
+plot(ssC, panel = function(x, y, ...)
+     { 
+       panel.xyplot(x, y)
+       panel.curve(2*dbitri(2*x), lwd=2, lty=2, n=500)
+     }, xlim=c(-2,2), ylim=c(0, 1.2))
+@
+
+\incfig{SSPA-simulated-data-effectsize}{0.3\textwidth}{Conjugate gradient method:}{Estimated density of effect sizes using the conjugate gradient method.}
+
+\subsection{Tikhonov regularization}
+
+<<tikohonov, fig=TRUE, include=FALSE>>=
+ssT <- sampleSize(pdC, 
+                  method="tikhonov", 
+                  control=list(resolution=250, 
+                    scale="pdfstat", 
+                    lambda = 10^seq(-10, 10, length=50), 
+                    verbose=FALSE, 
+                    modelselection="lcurve"))
+plot(ssT, panel = function(x, y, ...)
+     { 
+       panel.xyplot(x, y, type="b")
+       panel.curve(2*dbitri(2*x), lwd=2, lty=2, n=500)
+     }, xlim=c(-2,2), ylim=c(0, 1.2))
+@
+
+\incfig{SSPA-tikohonov}{0.3\textwidth}{Tikohonov regularization:}{Estimated density of effect sizes using the Tikohonov regularization.}
+
+\section{Case Study: Nutrigenomics microarray data}
+In this first example a set consisted of Affymetrix array data derived from a nutrigenomics experiment in which weak, intermediate and strong PPAR$\alpha$ agonists were administered to wild-type and PPAR$\alpha$-null mice is used. The power and sample size analysis confirms the hierarchy of PPAR$\alpha$-activating compounds previously reported and the general idea that larger effect sizes positively contribute to the average power of the experiment.\\
+
+PPAR$\alpha$ is a transcription factor that is activated upon binding by a variety of agonists, both of synthetic and natural origin. In this experiment the outcome of specific PPAR$\alpha$ activation on murine small intestinal gene expression was examined using Affymetrix GeneChip Mouse 430 2.0 arrays. PPAR$\alpha$ was activated by several PPAR$\alpha$-agonists that differed in activating potency. Data of three agonists were used, namely Wy14,643, fenofibrate and trilinolenin (C18:3). The first two compounds belong to the fibrate class of drugs that are widely prescribed to treat dyslipidemia, whereas trilinolenin is an agonist frequently found in the human diet. For intestinal PPAR$\alpha$, Wy14,643 is the most potent agonist followed by C18:3 and fenofibrate. Since time of exposure also affects the effect size, intestines were collected 6 hrs (all three agonists) or 5  days (Wy14,643 and fenofibrate only) after exposure. Expression estimates of probesets were obtained by GC-robust multi-array (GCRMA) analysis, employing the empirical Bayes approach for background adjustment, followed by quantile normalization and summarization. For each compound and exposure time, lists of moderated t-test statistics were computed, using the empirical Bayes linear regression model as implemented in \Rpackage{limma}, for each contrast representing the effect of compound in PPAR$\alpha$-null mice compared to wild-type mice. For more details see \cite{vanIterson2009}.
+
+<<nutrigenomics-effectsize, fig=TRUE, include=FALSE>>=
+library(lattice)
+data(Nutrigenomics)
+str(Nutrigenomics)
+pd <- apply(Nutrigenomics, 2, 
+            function(x) pilotData(statistics=x[-1], 
+                                  samplesize=sqrt(x[1]), 
+                                  distribution="norm"))
+ss <- lapply(pd, sampleSize,  
+             control=list(pi0Method="Storey", a=0, resolution=2^10, verbose=FALSE))
+
+##ss <- lapply(pd, sampleSize,  
+##             method = "congrad", 
+##             control=list(verbose=FALSE, resolution=2^10, from=-10, to=10))
+
+compounds <- c("Wy14,643",  "fenofibrate", "trilinolenin (C18:3)", "Wy14,643", "fenofibrate")
+exposure <- c("5 Days", "6 Hours")
+
+effectsize <- data.frame(exposure = factor(rep(rep(exposure, c(2, 3)), each=1024)), 
+                         compound = factor(rep(compounds, each=1024)), 
+                         lambda = as.vector(sapply(ss, 
+                           function(x)x@lambda)), 
+                         theta = as.vector(sapply(ss, 
+                           function(x)x@theta)))
+
+print(xyplot(lambda~theta|exposure, group=compound, data=effectsize, 
+             type=c("g", "l"), layout=c(1,2), lwd=2, xlab="effect size", ylab="", 
+             auto.key=list(columns=3, lines=TRUE, points=FALSE, cex=0.7)))
+@
+
+\incfig{SSPA-nutrigenomics-effectsize}{0.6\textwidth}{Nutrigenomic example:}{Estimated density of effect sizes for the five treatment exposure conditions.}
+
+<<nutrigenomics-power, fig=TRUE, include=FALSE>>=
+samplesize <- seq(2, 8)
+averagepower <- data.frame(power = as.vector(sapply(ss, 
+                             function(x) as.numeric(predictpower(x, samplesize=sqrt(samplesize))))), 
+                           exposure = factor(rep(rep(exposure, c(2, 3)), each=length(samplesize))), 
+                           compound = factor(rep(compounds, each=length(samplesize))),
+                           samplesize = rep(2*samplesize, 5))
+
+print(xyplot(power~samplesize|exposure, group=compound, data=averagepower, type=c("g", "b"), 
+             layout=c(1,2), lwd=2, pch=16, xlab="sample size (per group)", ylab="", 
+             auto.key=list(columns=3, lines=TRUE, points=FALSE, cex=0.7)))
+@
+
+\incfig{SSPA-nutrigenomics-power}{0.6\textwidth}{Nutrigenomic example:}{Predicted power curves for the five treatment exposure conditions.}
+
+\section{Case Study: deepSAGE of wild-type vs Dclk1 transgenic mice}
+In this example we will show how our method can be applied to count data of an RNA-seq experiment. We will use the data described by \cite{Hoen2008} comparing gene expression profiles in the hippocampi of transgenic $\delta$C-doublecortin-like kinase mice with that of wild-type mice. Data is available from GEO (GSE10782).\\
+
+and analyzed using the generalized linear model approach implemented in \Rpackage{edgeR}. A tag-wise dispersion parameter was estimated using the Cox-Reid adjusted profile likelihood approach for generalized linear models as implemented in \Rpackage{edgeR}. Using a treatment contrast, we tested per tag if there was a genotype effect using the likelihood ratio statistic. This test statistic follow asymptotically a $\chi^2$ distribution with one degree of freedom.
+
+<<obtain-teststatistics, eval=FALSE>>=
+##files contains the full path and file names of each sample
+targets <- data.frame(files=files,
+                      group=rep(c("DCLK", "WT"), 4), 
+                      description=rep(c("transgenic (Dclk1) mouse hippocampus", 
+                        "wild-type mouse hippocampus"), 4))
+d <- readDGE(targets) ##reading the data
+##filter out low read counts
+cpm.d <- cpm(d)
+d <- d[rowSums(cpm.d > 1) >= 4, ]
+
+design <- model.matrix(~group, data=d$samples) 
+##estimate dispersion
+disp <- estimateGLMCommonDisp(d, design)
+disp <- estimateGLMTagwiseDisp(disp, design)
+##fit model
+glmfit.hoen <- glmFit(d, design, dispersion = disp$tagwise.dispersion)
+##perform likelihood ratio test
+lrt.hoen <- glmLRT(glmfit.hoen)
+##extract results
+tbl <- topTags(lrt.hoen, n=nrow(d))[[1]]
+statistics <- tbl$LR
+@ 
+
+<<deepsage-effectsize, fig=TRUE, include=FALSE>>=
+library(lattice)
+data(deepSAGE)
+str(deepSAGE)
+pd <- pilotData(statistics=deepSAGE,
+                samplesize=8, distribution="chisq", df=1)
+ss <- sampleSize(pd, method="congrad", 
+                 control=list(trim=c(0, 0.98), symmetric=FALSE, from=0, to=10)) 
+pwr <- predictpower(ss, samplesize=c(8, 16, 32))
+op <- par(mfcol=c(2,1), mar=c(5,4,1,1))
+plot(ss@theta, ss@lambda, 
+     xlab="effect size", ylab="", type="l")
+plot(c(8, 16, 32), pwr, 
+     xlab="sample size", ylab="power", type="b", ylim=c(0,1))
+grid(col=1)
+par(op)
+@ 
+
+\incfig{SSPA-deepsage-effectsize}{0.6\textwidth}{Deep SAGE example:}{Estimated density of effect size and predicted power curve.}
+
+\clearpage
+
+\section{Session info}
+The version number of R and packages loaded for generating the vignette were:
+
+<<sessioninfo, results=tex, echo=FALSE>>=
+toLatex(sessionInfo())
+@ 
+
+\bibliography{SSPA}
+
+\end{document}
+
+
+
